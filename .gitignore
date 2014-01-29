@@ -1,5 +1,6 @@
 .settings/
 bin/
 querylogs/
+testquerylogs/
 .classpath
 .project

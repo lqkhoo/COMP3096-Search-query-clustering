@@ -4,18 +4,20 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.StringTokenizer;
-
+import java.util.regex.Pattern;
 
 /**
  * Class implementing stopwords removal.
- * Calling filter(String) will return a string with all stopwords initialized to the class removed.
+ * Calling filter(String) will return a string with punctuation marks except ' and 
+ *   stopwords initialized to the class removed.
  * @author Li Quan Khoo
  *
  */
 public class StopwordsFilter {
 	
-	public static String DEFAULT_INPUT_FILE_PATH = "src/config/stopwords.txt"; 
+	public static final String DEFAULT_INPUT_FILE_PATH = "src/config/stopwords.ini";
+	private static final String nonsenseRegex = "\\p{Punct}[ ]";
+	private static final String punctuationRegex = "\\p{Punct}";
 	
 	private ArrayList<String> stopwords;
 	
@@ -35,7 +37,7 @@ public class StopwordsFilter {
 			String line = br.readLine();
 			String word = null;
 			while(line != null) {
-				word = line.replace("\n", "").replace("\r", "");
+				word = line.replaceAll("[\n\r]", "");
 				stopwords.add(word);
 				line = br.readLine();
 			}
@@ -49,12 +51,18 @@ public class StopwordsFilter {
 	}
 	
 	public String filter(String string) {
-		
 		String output = "";
-		String[] tokens = string.split(" ");
-		for(int i = 0; i < tokens.length; i++) {
-			if(! this.stopwords.contains(string)) {
-				output += " " + tokens[i];
+		if (! Pattern.matches(nonsenseRegex, string)) {
+			string = string.replaceAll(punctuationRegex, " ");
+			String[] tokens = string.split(" ");
+			for(int i = 0; i < tokens.length; i++) {
+				if(! this.stopwords.contains(tokens[i])) {
+					if(output.equals("")) {
+						output += tokens[i];
+					} else {
+						output += " " + tokens[i];
+					}
+				}
 			}
 		}
 		return output;

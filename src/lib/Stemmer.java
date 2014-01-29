@@ -1,4 +1,5 @@
 package lib;
+
 /*
 
  Porter stemmer in Java. The original paper is in
@@ -573,11 +574,8 @@ public class Stemmer {
 		for (int i = 0; i < args.length; i++)
 			try {
 				FileInputStream in = new FileInputStream(args[i]);
-
 				try {
-					while (true)
-
-					{
+					while (true) {
 						int ch = in.read();
 						if (Character.isLetter((char) ch)) {
 							int j = 0;
@@ -625,9 +623,13 @@ public class Stemmer {
 					System.out.println("error reading " + args[i]);
 					break;
 				}
+				
+				in.close();
+				
 			} catch (FileNotFoundException e) {
 				System.out.println("file " + args[i] + " not found");
 				break;
+			} catch (IOException e) {
 			}
 	}
 }

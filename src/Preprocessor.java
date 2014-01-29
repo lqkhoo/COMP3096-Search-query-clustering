@@ -17,5 +17,12 @@ public class Preprocessor {
 		this.stemmer = new Stemmer();
 	}
 	
-	
+	public void test() {
+		LogObject obj = this.logReader.readNextLine();
+		while(obj != null) {
+			obj.setQuery(stopwordsFilter.filter(obj.getQuery()));
+			System.out.println(obj.toString());
+			obj = this.logReader.readNextLine();
+		}
+	}
 }
