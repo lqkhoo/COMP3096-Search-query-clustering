@@ -48,6 +48,7 @@ public class Preprocessor {
 				currentSession = new SearchSession(obj.getAnonId(), obj.getQueryTime());
 				currentSession.addQuery(obj.getQuery());
 				currentSession.setSessionEnd(obj.getQueryTime());
+				return;
 			} else {
 				// Existing session
 				if(currentSession.getUserId() == obj.getAnonId()) {
