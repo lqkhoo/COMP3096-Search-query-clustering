@@ -19,7 +19,7 @@ public class Cleaner {
 	
 	public static final String DEFAULT_INPUT_FILE_PATH = "src/config/stopwords.ini";
 	private static final String nonsenseRegex = "[\\p{Punct} ]*";
-	private static final String punctuationRegex = "[[\\p{Punct}]&&[^. ']]"; // All punctuation marks except '.', ' ', '\''
+	private static final String preStemmingFilterRegex = "[[\\p{Punct}]&&[^. ']]"; // All punctuation marks except '.', ' ', '\''
 	
 	private char[] stemmerCharArray;
 	private Stemmer stemmer;
@@ -61,7 +61,8 @@ public class Cleaner {
 		if (! Pattern.matches(nonsenseRegex, string)) {
 			
 			// Replace most symbols with spaces
-			string = string.replaceAll(punctuationRegex, " ");
+			string = string.replaceAll(preStemmingFilterRegex, " ");
+			
 			String[] tokens = string.split(" ");
 			for(int i = 0; i < tokens.length; i++) {
 				if(! this.stopwords.contains(tokens[i])) {
