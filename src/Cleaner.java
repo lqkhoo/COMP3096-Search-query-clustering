@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import lib.Stemmer;
+
 /**
  * Class implementing stopwords removal.
  * Calling filter(String) will return a string with punctuation marks except ' and 
@@ -13,19 +15,21 @@ import java.util.regex.Pattern;
  * @author Li Quan Khoo
  *
  */
-public class StopwordsFilter {
+public class Cleaner {
 	
 	public static final String DEFAULT_INPUT_FILE_PATH = "src/config/stopwords.ini";
-	private static final String nonsenseRegex = "\\p{Punct}[ ]";
-	private static final String punctuationRegex = "\\p{Punct}";
+	private static final String nonsenseRegex = "[\\p{Punct} ]*";
+	private static final String punctuationRegex = "[[\\p{Punct}]&&[^. ']]"; // All punctuation marks except '.', ' ', '\''
 	
+	private char[] stemmerCharArray;
+	private Stemmer stemmer;
 	private ArrayList<String> stopwords;
 	
-	public StopwordsFilter() {
+	public Cleaner() {
 		this(DEFAULT_INPUT_FILE_PATH);
 	}
 	
-	public StopwordsFilter(String inputFilePath) {
+	public Cleaner(String inputFilePath) {
 		
 		this.stopwords = new ArrayList<String>();
 		
@@ -52,15 +56,25 @@ public class StopwordsFilter {
 	
 	public String filter(String string) {
 		String output = "";
+		
+		// If string is nonsense, ignore
 		if (! Pattern.matches(nonsenseRegex, string)) {
+			
+			// Replace most symbols with spaces
 			string = string.replaceAll(punctuationRegex, " ");
 			String[] tokens = string.split(" ");
 			for(int i = 0; i < tokens.length; i++) {
 				if(! this.stopwords.contains(tokens[i])) {
+					
+					// Porter-stemming
+					this.stemmer = new Stemmer();
+					this.stemmerCharArray = tokens[i].toCharArray();
+					this.stemmer.add(stemmerCharArray, stemmerCharArray.length);
+					this.stemmer.stem();
 					if(output.equals("")) {
-						output += tokens[i];
+						output += this.stemmer.toString();
 					} else {
-						output += " " + tokens[i];
+						output += " " + this.stemmer.toString();
 					}
 				}
 			}
