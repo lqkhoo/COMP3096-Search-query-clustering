@@ -77,8 +77,12 @@ public class Preprocessor {
 			// Otherwise terminate existing session
 			this.sessionArray.add(currentSession);
 			if(this.sessionArray.size() >= maxSessions) {
+				
+				// do stuff with the array of sessions here
 				write();
-				this.sessionArray = new ArrayList<SearchSession>(); // Reset sessionArray
+				
+				// Reset sessionArray
+				this.sessionArray = new ArrayList<SearchSession>();
 			}
 			currentSession = null; // Reset session, loop to beginning to write
 		}
@@ -99,7 +103,9 @@ public class Preprocessor {
 			}
 			obj = this.logReader.readNextLine();
 		}
-		write();
+		if(this.sessionArray.size() != 0) {
+			write();
+		}
 		
 	}
 }
