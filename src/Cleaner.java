@@ -64,12 +64,12 @@ public class Cleaner {
 			string = string.replaceAll(preStemmingFilterRegex, " ");
 			
 			String[] tokens = string.split(" ");
-			for(int i = 0; i < tokens.length; i++) {
-				if(! this.stopwords.contains(tokens[i])) {
+			for(String token : tokens) {
+				if(! this.stopwords.contains(token)) {
 					
 					// Porter-stemming
 					this.stemmer = new Stemmer();
-					this.stemmerCharArray = tokens[i].toCharArray();
+					this.stemmerCharArray = token.toCharArray();
 					this.stemmer.add(stemmerCharArray, stemmerCharArray.length);
 					this.stemmer.stem();
 					if(output.equals("")) {
@@ -84,8 +84,8 @@ public class Cleaner {
 	}
 	
 	public void printStopwords() {
-		for(int i = 0; i < stopwords.size(); i++) {
-			System.out.println(stopwords.get(i));
+		for(String stopword : stopwords) {
+			System.out.println(stopword);
 		}
 	}
 	

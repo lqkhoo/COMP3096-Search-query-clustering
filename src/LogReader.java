@@ -7,8 +7,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 
 /**
- * Class which reads the query log files.
- * Designed to abstract away from the fact that it is reading multiple files.
+ * Facade.
+ * Class which reads the query log files. Abstracts away from the fact that it is reading multiple files.
  * Automatically opens next file in list and returns results until no more files are configured to be read.
  * It ignores the first line in every file as AOL logs contain column information in the first line.
  * @author Li Quan Khoo
@@ -17,7 +17,7 @@ import java.util.ArrayList;
 public class LogReader {
 	
 	// Path to query logs
-	public static final String DEFAULT_LOG_DIR_PATH = "testquerylogs/";
+	public static final String DEFAULT_LOG_DIR_PATH = "querylogs/";
 	
 	// File containing names of all query files to process
 	public static final String DEFAULT_CONFIG_FILE_PATH = "src/config/logfiles.ini";
@@ -25,6 +25,10 @@ public class LogReader {
 	private int currentFileIndex;
 	private String nextLine; // field to hold readLine()'s output to avoid repeated initialization
 	private LogObject nextLogObject;
+	private long fileSize;
+	private int reportPerPercent = 10; // How much of the current file is read before generating a report in the console
+	private int lastReportPercent;
+	private long bytesRead;
 	
 	private ArrayList<String> queryLogFileNames;
 	private String logDirPath;
@@ -41,10 +45,13 @@ public class LogReader {
 		this.logDirPath = logDirPath;
 		this.fileReader = null;
 		this.bufferedReader = null;
-		readInputFile(configFilePath);
+		this.fileSize = 0;
+		this.lastReportPercent = 0;
+		this.bytesRead = 0;
+		getTargetFiles(configFilePath);
 	}
 	
-	private void readInputFile(String configFilePath) {
+	private void getTargetFiles(String configFilePath) {
 		
 		File configFile = new File(configFilePath);
 		try {
@@ -78,6 +85,14 @@ public class LogReader {
 				// Read in line in current file
 				try {
 					nextLine = this.bufferedReader.readLine();
+					if(nextLine != null) {
+						bytesRead += nextLine.getBytes().length;
+						if(bytesRead > fileSize / 100 * lastReportPercent) {
+							System.out.println("    " + lastReportPercent + "%");
+							lastReportPercent += reportPerPercent;
+						}
+					}
+					
 				} catch (IOException e) {
 					System.out.println("Error reading log file " + logDirPath + queryLogFileNames.get(currentFileIndex) + ".");
 				}
@@ -99,6 +114,7 @@ public class LogReader {
 					// Otherwise EOF in current file reached. Close the file and increment the file index
 					try {
 						this.bufferedReader.close();
+						bytesRead = 0;
 						System.out.println("Finished reading file" + logDirPath + queryLogFileNames.get(currentFileIndex));
 					} catch (IOException e) {
 						System.out.println("Error closing query log file " + logDirPath + queryLogFileNames.get(currentFileIndex));
@@ -116,7 +132,9 @@ public class LogReader {
 					) && currentFileIndex < queryLogFileNames.size()) {
 				try {
 					System.out.println("Opening query log file " + logDirPath + queryLogFileNames.get(currentFileIndex));
-					this.fileReader = new FileReader(logDirPath + queryLogFileNames.get(currentFileIndex));
+					File file = new File(new File(logDirPath), queryLogFileNames.get(currentFileIndex));
+					this.fileSize = file.length();
+					this.fileReader = new FileReader(file);
 					this.bufferedReader = new BufferedReader(this.fileReader);
 					this.bufferedReader.readLine(); // This skips the first line of every log file
 				} catch (FileNotFoundException e) {
