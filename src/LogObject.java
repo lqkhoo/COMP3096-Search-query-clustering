@@ -3,7 +3,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * Container class for properties within a single log line
+ * Container class for properties within a single AOL query log line
  * @author Li Quan Khoo
  */
 public class LogObject {

@@ -12,9 +12,8 @@ public class QueryDistance {
 	
 	// Lexical distance weighting against semantic distance
 	// 0.5 means half/half, 1.0 means only consider lexical distance, 0.0 means only consider semantic distance
-	
-	//TODO find Lucchese's value
-	public static final double DEFAULT_LEXICAL_DISTANCE_WEIGHT = 0.5;
+	// Lucchese's best-result value for using only miu(1) is 1.0 (pg284)
+	public static final double DEFAULT_LEXICAL_DISTANCE_WEIGHT = 1.0;
 	
 	// For calculating the conditional distance function as defined in Lucchese et al. 2011
 	// If lexical distance is less than this value, then semantic distance is not considered at all
@@ -22,23 +21,30 @@ public class QueryDistance {
 	//   refer to the same thing / are reformulations
 	// 1.0 means always ignore semantic distance, 0.0 means always take into account semantic distance
 	
-	//TODO find Lucchese's value
-	public static final double DEFAULT_LEXICAL_DISTANCE_OVERRIDE_THRESHOLD = 1.0;
+	// Lucchese's value is 0.5 (pg285)
+	public static final double DEFAULT_LEXICAL_DISTANCE_OVERRIDE_THRESHOLD = 0.5;
+	// Lucchese's value is 4.0 (pg285)
+	public static final double DEFAULT_SEMANTIC_DISTANCE_MULTIPLIER = 4.0;
 	
 	public QueryDistance() {
-		
+		// Nothing to initialize
 	}
 	
 	public static double conditionalDistance(String str1, String str2) {
-		return conditionalDistance(str1, str2, DEFAULT_LEXICAL_DISTANCE_OVERRIDE_THRESHOLD);
+		
+		return conditionalDistance(str1, str2,
+				DEFAULT_LEXICAL_DISTANCE_OVERRIDE_THRESHOLD,
+				DEFAULT_SEMANTIC_DISTANCE_MULTIPLIER);
 	}
 	
-	public static double conditionalDistance(String str1, String str2, double lexicalOverrideThreshold) {
+	public static double conditionalDistance(String str1, String str2,
+			double lexicalOverrideThreshold, double semanticDistanceMultiplier) {
+		
 		double lexicalDistance = lexicalDistance(str1, str2);
 		if(lexicalDistance < lexicalOverrideThreshold) {
 			return lexicalDistance;
 		} else {
-			return Math.min(lexicalDistance, semanticDistance(str1, str2));
+			return Math.min(lexicalDistance, semanticDistanceMultiplier * semanticDistance(str1, str2));
 		}
 		
 	}
@@ -53,7 +59,7 @@ public class QueryDistance {
 	}
 	
 	/*
-	 * Placeholder for content calculation
+	 * Placeholder for content distance calculation
 	 */
 	public static double semanticDistance(String str1, String str2) {
 		//TODO stub method
