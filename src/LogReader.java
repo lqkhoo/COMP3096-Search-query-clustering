@@ -131,7 +131,7 @@ public class LogReader {
 					|| this.bufferedReader == null
 					) && currentFileIndex < queryLogFileNames.size()) {
 				try {
-					System.out.println("Opening query log file " + logDirPath + queryLogFileNames.get(currentFileIndex));
+					System.out.println("Processing query log file " + logDirPath + queryLogFileNames.get(currentFileIndex));
 					File file = new File(new File(logDirPath), queryLogFileNames.get(currentFileIndex));
 					this.fileSize = file.length();
 					this.fileReader = new FileReader(file);

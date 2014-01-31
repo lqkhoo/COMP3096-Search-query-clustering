@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
  * This is the preprocessor class handling all the data cleanup and time splitting
  * Takes AOL log files and outputs a set of JSON files containing session information
  *   in the form of an array of serialized SearchSession objects.
+ * The output of these files are called Time-gap sessions within Lucchese et al. 2011
  * @author Li Quan Khoo
  *
  */
@@ -78,7 +79,7 @@ public class Preprocessor {
 			this.sessionArray.add(currentSession);
 			if(this.sessionArray.size() >= maxSessions) {
 				
-				// do stuff with the array of sessions here
+				// do stuff with the full array of sessions here
 				write();
 				
 				// Reset sessionArray
@@ -87,7 +88,6 @@ public class Preprocessor {
 			currentSession = null; // Reset session, loop to beginning to write
 		}
 	}
-	
 	
 	public void run() {
 		
@@ -104,6 +104,7 @@ public class Preprocessor {
 			obj = this.logReader.readNextLine();
 		}
 		if(this.sessionArray.size() != 0) {
+			// do stuff with the partially full array of the last sessions here
 			write();
 		}
 		
