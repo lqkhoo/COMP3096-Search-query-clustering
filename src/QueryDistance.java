@@ -10,8 +10,16 @@ public class QueryDistance {
 		
 	}
 	
-	public static float Levenshtein(String str1, String str2) {
-		return Levenshtein(str1, str2, true);
+	/*
+	 * Calculate content distance based on normalized Levenshtein distance
+	 *   and Jaccard distance calculated with tri-grams
+	 */
+	public static float contentDistance(String str1, String str2) {
+		return (levenshtein(str1, str2, true) + jaccard(str1, str2, 3)) / 2;
+	}
+	
+	public static float levenshtein(String str1, String str2) {
+		return levenshtein(str1, str2, true);
 	}
 	
 	/*
@@ -19,7 +27,7 @@ public class QueryDistance {
 	 * http://www.codeproject.com/Articles/13525/Fast-memory-efficient-Levenshtein-algorithm
 	 * by Sten Hjelmqvist, 26 Mar 2012
 	 */
-	public static float Levenshtein(String str1, String str2, boolean normalize) {
+	public static float levenshtein(String str1, String str2, boolean normalize) {
 		// degenerate cases
 		if(str1.equals(str2)) { return 0; }
 		if(str1.length() == 0) { return str2.length(); }
@@ -64,12 +72,12 @@ public class QueryDistance {
 		
 	}
 	
-	public static float Jaccard(String str1, String str2) {
+	public static float jaccard(String str1, String str2) {
 		// Return normalized Jaccard distance based on tri-grams, which is what Lucchese et al. are doing
-		return Jaccard(str1, str2, 3);
+		return jaccard(str1, str2, 3);
 	}
 	
-	public static float Jaccard(String str1, String str2, int nGramSize) {
+	public static float jaccard(String str1, String str2, int nGramSize) {
 		
 		// Jaccard distance formula given by:
 		// 1 - ( intersection -> no. of ngrams in both strings ) / ( union -> no. ngrams in both strings)
