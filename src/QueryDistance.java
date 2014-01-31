@@ -6,19 +6,73 @@
  */
 public class QueryDistance {
 	
+	// Current values place all weighting on the lexical distance
+	//   as we do not have the calculations for semantic distance
+	
+	
+	// Lexical distance weighting against semantic distance
+	// 0.5 means half/half, 1.0 means only consider lexical distance, 0.0 means only consider semantic distance
+	
+	//TODO find Lucchese's value
+	public static final double DEFAULT_LEXICAL_DISTANCE_WEIGHT = 0.5;
+	
+	// For calculating the conditional distance function as defined in Lucchese et al. 2011
+	// If lexical distance is less than this value, then semantic distance is not considered at all
+	//   to satisfy the intuition that if two queries are extremely similar, then they very likely 
+	//   refer to the same thing / are reformulations
+	// 1.0 means always ignore semantic distance, 0.0 means always take into account semantic distance
+	
+	//TODO find Lucchese's value
+	public static final double DEFAULT_LEXICAL_DISTANCE_OVERRIDE_THRESHOLD = 1.0;
+	
 	public QueryDistance() {
 		
+	}
+	
+	public static double conditionalDistance(String str1, String str2) {
+		return conditionalDistance(str1, str2, DEFAULT_LEXICAL_DISTANCE_OVERRIDE_THRESHOLD);
+	}
+	
+	public static double conditionalDistance(String str1, String str2, double lexicalOverrideThreshold) {
+		double lexicalDistance = lexicalDistance(str1, str2);
+		if(lexicalDistance < lexicalOverrideThreshold) {
+			return lexicalDistance;
+		} else {
+			return Math.min(lexicalDistance, semanticDistance(str1, str2));
+		}
+		
+	}
+	
+	public static double distance(String str1, String str2) {
+		return distance(str1, str2,	DEFAULT_LEXICAL_DISTANCE_WEIGHT);
+	}
+	
+	public static double distance(String str1, String str2, double lexicalDistanceWeight) {
+		return (lexicalDistance (str1, str2) * lexicalDistanceWeight)
+				+ semanticDistance(str1, str2) * (1 - lexicalDistanceWeight);
+	}
+	
+	/*
+	 * Placeholder for content calculation
+	 */
+	public static double semanticDistance(String str1, String str2) {
+		//TODO stub method
+		return 0;
 	}
 	
 	/*
 	 * Calculate content distance based on normalized Levenshtein distance
 	 *   and Jaccard distance calculated with tri-grams
 	 */
-	public static float contentDistance(String str1, String str2) {
+	public static double lexicalDistance(String str1, String str2) {
 		return (levenshtein(str1, str2, true) + jaccard(str1, str2, 3)) / 2;
 	}
 	
-	public static float levenshtein(String str1, String str2) {
+	/*
+	 * Returns normalized Levenshtein distance between two strings
+	 * O(n^2) time complexity
+	 */
+	public static double levenshtein(String str1, String str2) {
 		return levenshtein(str1, str2, true);
 	}
 	
@@ -27,7 +81,7 @@ public class QueryDistance {
 	 * http://www.codeproject.com/Articles/13525/Fast-memory-efficient-Levenshtein-algorithm
 	 * by Sten Hjelmqvist, 26 Mar 2012
 	 */
-	public static float levenshtein(String str1, String str2, boolean normalize) {
+	public static double levenshtein(String str1, String str2, boolean normalize) {
 		// degenerate cases
 		if(str1.equals(str2)) { return 0; }
 		if(str1.length() == 0) { return str2.length(); }
@@ -72,14 +126,18 @@ public class QueryDistance {
 		
 	}
 	
-	public static float jaccard(String str1, String str2) {
-		// Return normalized Jaccard distance based on tri-grams, which is what Lucchese et al. are doing
+	/*
+	 * Returns normalized Jaccard distance based on tri-grams, which is what Lucchese et al. are doing
+	 * O(n^2) time complexity
+	 */
+	public static double jaccard(String str1, String str2) {
+		
 		return jaccard(str1, str2, 3);
 	}
 	
-	public static float jaccard(String str1, String str2, int nGramSize) {
+	public static double jaccard(String str1, String str2, int nGramSize) {
 		
-		// Jaccard distance formula given by:
+		// Normalized Jaccard distance formula given by:
 		// 1 - ( intersection -> no. of ngrams in both strings ) / ( union -> no. ngrams in both strings)
 		
 		int intersection = 0;
