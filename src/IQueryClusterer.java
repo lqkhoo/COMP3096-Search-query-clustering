@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 
 /**
  * 
@@ -6,6 +8,9 @@
  */
 public interface IQueryClusterer {
 	
-	
+	//TODO
+	public void cluster(ArrayList<SearchSession> searchSessions);
+	//TODO read from file
+	public void cluster();
 	
 }
