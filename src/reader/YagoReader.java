@@ -13,7 +13,7 @@ import exception.NotImplementedException;
  * Facade.
  * Provides access to YAGO tsv/ttl files. Some entities are contained over multiple lines,
  * especially in tsv files. This class abstracts away from opening or closing the files - 
- * the class calling the concrete class implementation should only need to call readLine()
+ * the class calling the concrete class implementation should only need to call readNext_X()
  * until null is returned - this class handles all file opening and closing.
  * @author Li Quan Khoo
  *
@@ -71,12 +71,12 @@ public abstract class YagoReader {
 	}
 	
 	// Override if subclass supports reading from a tsv file
-	public String readNextTsv() throws NotImplementedException {
+	public String readNext_Tsv() throws NotImplementedException {
 		throw new NotImplementedException();
 	}
 	
 	// Override if subclass supports reading from a ttl file
-	public String readNextTtl() throws NotImplementedException {
+	public String readNext_Ttl() throws NotImplementedException {
 		throw new NotImplementedException();
 	}
 	

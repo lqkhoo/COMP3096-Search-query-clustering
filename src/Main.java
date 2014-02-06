@@ -1,14 +1,14 @@
 import processor.IQueryClusterer;
 import processor.Preprocessor;
 import processor.QChtc;
-import reader.BigFileScout;
+import reader.BigFileSampler;
 
 
 public class Main {
 	
 	private static Preprocessor preprocessor;
 	private static IQueryClusterer clusterer;
-	private static BigFileScout scout;
+	private static BigFileSampler sampler;
 	
 	/**
 	 * Preprocessor - Take logs and output segmented JSON search session objects
@@ -27,18 +27,18 @@ public class Main {
 	}
 	
 	/**
-	 * Scout - Takes large files and outputs the first n lines to another file
+	 * Sample - Takes large files and outputs the first n lines to another file
 	 * @param inputDir
 	 */
-	private static void scoutFiles(String inputDir) {
-		scout = new BigFileScout(inputDir);
-		scout.run();
+	private static void sampleFiles(String inputDir) {
+		sampler = new BigFileSampler(inputDir);
+		sampler.run();
 	}
 	
 	public static void main(String[] args) {
 		
 		//runPreprocessor();
-		scoutFiles("input/yago/tsv");
+		sampleFiles("input/yago/tsv");
 		
 	}
 	

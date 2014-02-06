@@ -18,7 +18,7 @@ import java.io.IOException;
  * @author Li Quan Khoo
  *
  */
-public class BigFileScout {
+public class BigFileSampler {
 	
 	public static final int DEFAULT_NUM_OF_LINES_TO_READ = 100;
 	public static final String DEFAULT_OUTPUT_DIR = "output/scout-out/";
@@ -27,11 +27,11 @@ public class BigFileScout {
 	private String outputDir;
 	private int numOfLinesToRead;
 	
-	public BigFileScout(String inputFilePath) {
+	public BigFileSampler(String inputFilePath) {
 		this(inputFilePath, DEFAULT_NUM_OF_LINES_TO_READ);
 	}
 	
-	public BigFileScout(String inputPath, int numOfLinesToRead) {
+	public BigFileSampler(String inputPath, int numOfLinesToRead) {
 		this.inputPath = inputPath;
 		this.outputDir = DEFAULT_OUTPUT_DIR;
 		this.numOfLinesToRead = numOfLinesToRead;
