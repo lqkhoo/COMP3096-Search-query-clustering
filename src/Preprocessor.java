@@ -22,7 +22,7 @@ public class Preprocessor {
 	private long maxSessionLength;
 	
 	// Default write directory
-	public static final String DEFAULT_OUTPUT_DIR = "preprocessor-out/";
+	public static final String DEFAULT_OUTPUT_DIR = "output/preprocessor-out/";
 	private String outputDir;
 	
 	private LogReader logReader;
@@ -43,7 +43,7 @@ public class Preprocessor {
 		this.outputDir = outputDir;
 		this.logReader = new LogReader();
 		this.cleaner = new Cleaner();
-		this.writer = new BatchFileWriter(this.outputDir);
+		this.writer = new BatchFileWriter(this.outputDir, "json");
 		
 		this.currentSession = null;
 		this.sessionLength = 0;

@@ -10,7 +10,7 @@ import lib.Stemmer;
 
 /**
  * Class implementing stopwords removal.
- * Calling filter(String) will return a string with punctuation marks except ' and 
+ * Calling filter(String) will return a string with punctuation marks except ' and with
  *   stopwords initialized to the class removed.
  * @author Li Quan Khoo
  *

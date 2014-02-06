@@ -1,7 +1,6 @@
 .settings/
 bin/
-preprocessor-out/
-querylogs/
-testquerylogs/
+input/
+output/
 .classpath
 .project

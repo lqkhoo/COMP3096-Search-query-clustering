@@ -17,7 +17,7 @@ import java.util.ArrayList;
 public class LogReader {
 	
 	// Path to query logs
-	public static final String DEFAULT_LOG_DIR_PATH = "querylogs/";
+	public static final String DEFAULT_LOG_DIR_PATH = "input/querylogs/";
 	
 	// File containing names of all query files to process
 	public static final String DEFAULT_CONFIG_FILE_PATH = "src/config/logfiles.ini";
@@ -106,7 +106,7 @@ public class LogReader {
 						System.out.println(e);
 						System.out.println("foo");
 						return null;
-					} catch (ParseException e) { // thrown by SimleDateFormat.parse()
+					} catch (ParseException e) { // thrown by SimpleDateFormat.parse()
 						return null;
 					}
 					
@@ -115,7 +115,7 @@ public class LogReader {
 					try {
 						this.bufferedReader.close();
 						bytesRead = 0;
-						System.out.println("Finished reading file" + logDirPath + queryLogFileNames.get(currentFileIndex));
+						System.out.println("Finished reading file " + logDirPath + queryLogFileNames.get(currentFileIndex));
 					} catch (IOException e) {
 						System.out.println("Error closing query log file " + logDirPath + queryLogFileNames.get(currentFileIndex));
 					}

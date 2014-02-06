@@ -14,13 +14,18 @@ import java.util.HashMap;
 public class BatchFileWriter {
 	
 	public static final String DEFAULT_ENCODING = "UTF-8";
-	
+	private String fileExtension;
 	private File dir;
 	private HashMap<String, Integer> numberingMap;
 	
 	public BatchFileWriter(String dirPath) {
+		this(dirPath, null);
+	}
+	
+	public BatchFileWriter(String dirPath, String fileExtension) {
 		this.dir = new File(dirPath);
 		this.numberingMap = new HashMap<String, Integer>();
+		this.fileExtension = fileExtension;
 	}
 	
 	public void writeToFile(String string, String fileName) {
@@ -31,13 +36,25 @@ public class BatchFileWriter {
 	 * Writes a string to a file. If the file already exists 
 	 *   then the file is appended with "-0", "-1", and so on
 	 */
+	
+	private String makeFileName(String fileName, String numbering) {
+		String str = fileName;
+		if(! numbering.equals("")) {
+			str += "-" + numbering;
+		}
+		if( this.fileExtension != null) {
+			str += "." + this.fileExtension;
+		}
+		return str;
+	}
+	
 	public void writeToFile(String string, String fileName, String encoding) {
 		
 		if(! this.numberingMap.containsKey(fileName)) {
 			this.numberingMap.put(fileName, 0);
 		}
 		Integer numbering = this.numberingMap.get(fileName);
-		String modifiedFileName = fileName + "-" + numbering.toString();
+		String modifiedFileName = makeFileName(fileName, numbering.toString());
 		File file = new File(dir, modifiedFileName);
 		// Loop only runs if directory not fully cleared beforehand, and files are left over
 		// If there are under 500 files, loop runs writes new files using gaps between the numbering
@@ -47,7 +64,7 @@ public class BatchFileWriter {
 				break;
 			} else {
 				numbering++;
-				modifiedFileName = fileName + "-" + numbering.toString();
+				modifiedFileName = makeFileName(fileName, numbering.toString());
 				file = new File(dir, modifiedFileName);
 			}
 		}
