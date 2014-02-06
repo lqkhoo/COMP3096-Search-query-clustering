@@ -1,4 +1,13 @@
+package processor;
 import java.util.ArrayList;
+
+import reader.LogReader;
+import writer.BatchFileWriter;
+
+import model.LogObject;
+import model.SearchSession;
+
+
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

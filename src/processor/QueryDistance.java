@@ -1,3 +1,4 @@
+package processor;
 /**
  * Class that calculates the query distance between two strings
  * 

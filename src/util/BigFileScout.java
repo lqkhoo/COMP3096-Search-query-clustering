@@ -1,5 +1,6 @@
 package util;
 
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -19,7 +20,7 @@ import java.io.IOException;
  */
 public class BigFileScout {
 	
-	public static final int DEFAULT_NUM_OF_LINES_READ = 100;
+	public static final int DEFAULT_NUM_OF_LINES_TO_READ = 100;
 	public static final String DEFAULT_OUTPUT_DIR = "output/scout-out/";
 	
 	private String inputPath;
@@ -27,7 +28,7 @@ public class BigFileScout {
 	private int numOfLinesToRead;
 	
 	public BigFileScout(String inputFilePath) {
-		this(inputFilePath, DEFAULT_NUM_OF_LINES_READ);
+		this(inputFilePath, DEFAULT_NUM_OF_LINES_TO_READ);
 	}
 	
 	public BigFileScout(String inputPath, int numOfLinesToRead) {
