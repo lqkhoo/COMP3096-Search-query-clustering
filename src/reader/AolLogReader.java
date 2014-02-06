@@ -17,7 +17,7 @@ import model.LogObject;
  * @author Li Quan Khoo
  *
  */
-public class LogReader {
+public class AolLogReader {
 	
 	// Path to query logs
 	public static final String DEFAULT_LOG_DIR_PATH = "input/querylogs/";
@@ -38,11 +38,11 @@ public class LogReader {
 	private FileReader fileReader;
 	private BufferedReader bufferedReader;
 	
-	public LogReader() {
+	public AolLogReader() {
 		this(DEFAULT_CONFIG_FILE_PATH, DEFAULT_LOG_DIR_PATH);
 	}
 	
-	public LogReader(String configFilePath, String logDirPath) {
+	public AolLogReader(String configFilePath, String logDirPath) {
 		this.queryLogFileNames = new ArrayList<String>();
 		this.currentFileIndex = 0;
 		this.logDirPath = logDirPath;

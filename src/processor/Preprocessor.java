@@ -1,7 +1,7 @@
 package processor;
 import java.util.ArrayList;
 
-import reader.LogReader;
+import reader.AolLogReader;
 import writer.BatchFileWriter;
 
 import model.LogObject;
@@ -34,7 +34,7 @@ public class Preprocessor {
 	public static final String DEFAULT_OUTPUT_DIR = "output/preprocessor-out/";
 	private String outputDir;
 	
-	private LogReader logReader;
+	private AolLogReader logReader;
 	private Cleaner cleaner;
 	private BatchFileWriter writer;
 	
@@ -50,7 +50,7 @@ public class Preprocessor {
 		this.maxSessions = maxSessions;
 		this.maxSessionLength = defaultMaxSessionLength;
 		this.outputDir = outputDir;
-		this.logReader = new LogReader();
+		this.logReader = new AolLogReader();
 		this.cleaner = new Cleaner();
 		this.writer = new BatchFileWriter(this.outputDir, "json");
 		

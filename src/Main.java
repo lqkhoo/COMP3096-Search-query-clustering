@@ -1,7 +1,7 @@
 import processor.IQueryClusterer;
 import processor.Preprocessor;
 import processor.QChtc;
-import util.BigFileScout;
+import reader.BigFileScout;
 
 
 public class Main {
@@ -38,7 +38,7 @@ public class Main {
 	public static void main(String[] args) {
 		
 		//runPreprocessor();
-		scoutFiles("input/yago/ttl");
+		scoutFiles("input/yago/tsv");
 		
 	}
 	
