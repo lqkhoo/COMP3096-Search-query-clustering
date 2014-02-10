@@ -3,6 +3,7 @@ import processor.Preprocessor;
 import processor.QChtc;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
+import processor.yago.YagoSimpleTypesProcessor;
 import reader.BigFileSampler;
 
 
@@ -41,11 +42,20 @@ public class Main {
 	}
 	
 	/**
+	 * Files:
+	 * 
+	 * yagoDBPediaClasses:		{ wikicategories | wordnet ids }	--- owl:equivalentClass -->		{ dbpedia href http:// }
+	 * yagoDBPediaInstances:	{ dbpedia entities }				--> owl:sameAs -->				{ dbpedia href http:// }
+	 * yagoFacts:				{ yagoFactId , yagoEntity }			--> yagoRelation -->			{ yagoEntity }
+	 * yagoImportantTypes:		{ yago ???
+	 * 
+	 * Right now all output is focused on entity -- Files are about entities and their mappings to everything else -- dbpedia classes etc.
+	 * If we need classes mapping to entities then change each processor to have multiple file writers.
 	 * 
 	 */
 	private static void processYago() {
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
-				
+				new YagoSimpleTypesProcessor("input/yago/tsv/yagoSimpleTypes.tsv", "tsv", "output/yago-out/entities", "tsv")
 		});
 		yagoProcessor.run();
 	}

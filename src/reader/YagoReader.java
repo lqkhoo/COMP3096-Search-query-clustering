@@ -1,4 +1,4 @@
-package reader.yago;
+package reader;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -85,9 +85,9 @@ public class YagoReader {
 					continue;
 				} else {
 					this.close();
+					break;
 				}
 			}
-
 		} catch (IOException e) {
 			System.out.println("YagoReader: IOException while reading input file: " + inputFilePath);
 		}
