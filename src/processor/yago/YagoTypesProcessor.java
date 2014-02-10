@@ -7,18 +7,29 @@ import reader.YagoReader;
 import writer.YagoDumpWriter;
 import writer.YagoWriter;
 
-public class YagoSimpleTypesProcessor extends AYagoProcessor {
+/**
+ * Designed to process Yago entity type declaration files - namely:
+ * 
+ * yagoSimpleTypes			done | degenerates present
+ * yagoImportantTypes		done | degenerates present
+ * yagoTransitiveType		not done
+ * yagoWikipediaInfo		not done
+ * 
+ * @author Li Quan Khoo
+ *
+ */
+public class YagoTypesProcessor extends AYagoProcessor {
 	
 	private YagoReader yagoReader;
 	private YagoWriter yagoWriter;
 	private YagoDumpWriter yagoDumpWriter;
 	
-	public YagoSimpleTypesProcessor(String inputFilePath, String inputFileType, String outputFilePath, String outputFileType) {
+	public YagoTypesProcessor(String inputFilePath, String inputFileType, String outputFilePath, String outputFileType, String dumpFileName) {
 		this.inputFileType = inputFileType;
 		this.outputFileType = outputFileType;
 		this.yagoReader = new YagoReader(inputFilePath);
 		this.yagoWriter = new YagoWriter(outputFilePath, outputFileType);
-		this.yagoDumpWriter = new YagoDumpWriter(outputFilePath, "yagoSimpleTypes-dump." + outputFileType);
+		this.yagoDumpWriter = new YagoDumpWriter(outputFilePath, dumpFileName + "." + outputFileType);
 	}
 	
 	@Override

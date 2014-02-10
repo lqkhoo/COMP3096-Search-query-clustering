@@ -6,7 +6,7 @@ import processor.Preprocessor;
 import processor.QChtc;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
-import processor.yago.YagoSimpleTypesProcessor;
+import processor.yago.YagoTypesProcessor;
 import reader.BigFileSampler;
 
 
@@ -58,14 +58,23 @@ public class Main {
 	 */
 	private static void processYago() {
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
-				new YagoSimpleTypesProcessor("input/yago/tsv/yagoSimpleTypes.tsv", "tsv", "output/yago-out/entities", "tsv")
+				new YagoTypesProcessor("input/yago/tsv/yagoSimpleTypes.tsv", "tsv", "output/yago-out/entities", "tsv", "yagoSimpleTypes-dump"),
+				new YagoTypesProcessor("input/yago/tsv/yagoImportantTypes.tsv", "tsv", "output/yago-out/entities", "tsv", "yagoImportantTypes-dump"),
+				new YagoTypesProcessor("input/yago/tsv/yagoTransitiveType.tsv", "tsv", "output/yago-out/entities", "tsv", "yagoTransitiveType-dump")
 		});
 		yagoProcessor.run();
+	}
+	
+	private static void regexTest() {
+		System.out.println(Pattern.matches("([\\t][<]([\\S]*)[>][\\t][\\S]*[\\t][<][\\S]*[>][\\t])?",
+				"\t<communist_Czechoslovakia>\trdf:type\t<wordnet_communist_economy_108367579>\t"));
 	}
 	
 	
 	/** */
 	public static void main(String[] args) {
+		
+		//regexTest();
 		
 		//preprocessQueryLogs();
 		//sampleFiles("input/yago/tsv");

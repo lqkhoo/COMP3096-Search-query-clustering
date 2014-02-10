@@ -91,7 +91,7 @@ public class AolLogReader {
 					if(nextLine != null) {
 						bytesRead += nextLine.getBytes().length;
 						if(bytesRead > fileSize / 100 * lastReportPercent) {
-							System.out.println("    " + lastReportPercent + "%");
+							System.out.println("    ~" + lastReportPercent + "%");
 							lastReportPercent += reportPerPercent;
 						}
 					}
