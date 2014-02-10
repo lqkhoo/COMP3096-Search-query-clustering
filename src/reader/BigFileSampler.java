@@ -21,7 +21,7 @@ import java.io.IOException;
 public class BigFileSampler {
 	
 	public static final int DEFAULT_NUM_OF_LINES_TO_READ = 100;
-	public static final String DEFAULT_OUTPUT_DIR = "output/scout-out/";
+	public static final String DEFAULT_OUTPUT_DIR = "output/sampler-out/";
 	
 	private String inputPath;
 	private String outputDir;
