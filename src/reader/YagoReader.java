@@ -25,14 +25,25 @@ public class YagoReader {
 	protected FileReader fileReader;
 	protected BufferedReader bufferedReader;
 	
+	protected long fileSize;
+	protected int lastReportPercent;
+	protected int reportPerPercent = 10; // How much of the current file is read before generating a report in the console
+	protected int bytesRead;
+	
 	public YagoReader(String inputFilePath) {
 		this.inputFilePath = inputFilePath;
+		this.fileSize = 0;
+		this.lastReportPercent = 0;
+		this.bytesRead = 0;
 	}
 		
 	private boolean open() {
 		try {
-			this.fileReader = new FileReader(new File(this.inputFilePath));
+			File file = new File(this.inputFilePath);
+			this.fileReader = new FileReader(file);
 			this.bufferedReader = new BufferedReader(this.fileReader);
+			this.fileSize = file.length();
+			System.out.println("YagoReader: Reading file: " + inputFilePath);
 		} catch (FileNotFoundException e) {
 			System.out.println("YagoReader: Input file not found.");
 			return false;
@@ -70,9 +81,19 @@ public class YagoReader {
 		try {
 			line = this.bufferedReader.readLine();
 			while(true) {
+				
+				// print read status
 				if(line != null) {
-					// short circuit for performance reasons - the vast majority of lines start with "<".
-					// Tsv files commonly start with "\t"
+					bytesRead += line.getBytes().length;
+					if(bytesRead > fileSize / 100 * lastReportPercent) {
+						System.out.println("    " + lastReportPercent + "% (approx)");
+						lastReportPercent += reportPerPercent;
+					}
+				}
+				
+				// read
+				if(line != null) {
+					// short circuit for performance reasons - the vast majority of lines start with "<". Tsv files commonly start with "\t"
 					if(! line.startsWith("<") || ! line.startsWith("\t")) {
 						// if required, then set specialized filters to filter out particular asides here
 						if(line.equals("") ||
@@ -82,11 +103,11 @@ public class YagoReader {
 						}
 						return line;
 					}
-					continue;
 				} else {
 					this.close();
 					break;
 				}
+				
 			}
 		} catch (IOException e) {
 			System.out.println("YagoReader: IOException while reading input file: " + inputFilePath);

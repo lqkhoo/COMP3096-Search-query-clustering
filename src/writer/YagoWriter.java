@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import model.Triple;
@@ -32,66 +33,77 @@ import model.Triple;
 
 public class YagoWriter {
 	
+	protected static final String[] HASH_LIST = new String[] {
+		"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "_"
+	};
+	
 	protected String outputFileExtension;
 	protected String outputDirPath;
-	protected String subDirPath;
-	protected String filePath;
-	protected File file;
-	protected FileWriter fileWriter;
-	protected BufferedWriter bufferedWriter;
+	protected boolean areBuffersOpened = false;
+	protected HashMap<String, File> fileMap;
+	protected HashMap<String, FileWriter> fileWriterMap;
+	protected HashMap<String, BufferedWriter> bufferedWriterMap;
 		
 	public YagoWriter(String outputDirPath, String outputFileExtension) {
 		this.outputDirPath = outputDirPath;
 		this.outputFileExtension = outputFileExtension;
+		
+		this.fileMap = new HashMap<String, File>(27);
+		this.fileWriterMap = new HashMap<String, FileWriter>(27);
+		this.bufferedWriterMap = new HashMap<String, BufferedWriter>(27);
 	}
 	
-	private void open(String fileName) {
-		
-		String startingChar = fileName.substring(0, 1);
-		this.subDirPath = this.outputDirPath + "/" + startingChar;
-		this.filePath = this.subDirPath + "/" + fileName + "." + this.outputFileExtension;
-		this.file = new File(this.filePath);
-		
-		try {
-			new File(this.subDirPath).mkdirs();
-			this.fileWriter = new FileWriter(this.file);
-			this.bufferedWriter = new BufferedWriter(this.fileWriter);
-		} catch (IOException e) {
-			System.out.println("AYagoWriter: Error creating file: " + filePath);
+	private void open() {
+		for(int i = 0; i < HASH_LIST.length; i++) {
+			try {
+				File file = new File(this.outputDirPath + "/" + HASH_LIST[i] + "." + this.outputFileExtension);
+				FileWriter fileWriter;
+				fileWriter = new FileWriter(file, true);	// append, do not overwite
+				BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+				this.fileMap.put(HASH_LIST[i], file);
+				this.fileWriterMap.put(HASH_LIST[i], fileWriter);
+				this.bufferedWriterMap.put(HASH_LIST[i], bufferedWriter);
+			} catch (IOException e) {
+				System.out.println("YagoWriter: Error opening file: " + HASH_LIST[i] + "." + this.outputFileExtension);
+			}
 		}
-		
-		
+		System.out.println("YagoWriter: File buffers opened. Writing...");
+		this.areBuffersOpened = true;
 	}
 	
-	private void close() {
-		try {
-			this.bufferedWriter.close();
-		} catch (IOException e) {
-			System.out.println("AYagoWriter: Error closing file.");
+	public void close() {
+		for(int i = 0; i < HASH_LIST.length; i++) {
+			try {
+				this.bufferedWriterMap.get(HASH_LIST[i]).close();
+			} catch (IOException e) {
+				System.out.println("YagoWriter: Error closing file: " + HASH_LIST[i] + "." + this.outputFileExtension);
+			}
 		}
+		System.out.println("YagoWriter: All files successfully closed.");
 	}
 	
-	public void write(String[] stringArray, String fileName) {
-		open(fileName);
+	public void write(String[] stringArray, String indexChar) {
+		if(! areBuffersOpened) {
+			open();
+		}
 		for(String string : stringArray) {
-			this._write(string, fileName);
+			this._write(string, indexChar);
 		}
 	}
 	
-	public void write(String string, String fileName) {
-		open(fileName);
-		_write(string, fileName);
-		close();
+	public void write(String string, String indexChar) {
+		if(! areBuffersOpened) {
+			open();
+		}
+		_write(string, indexChar);
 	}
 	
-	private void _write(String string, String fileName) {
-		
+	private void _write(String string, String indexChar) {
 		try {
-			this.bufferedWriter.write(string + "\n");
+			this.bufferedWriterMap.get(indexChar).write(string + "\n");
 		} catch (IOException e) {
-			System.out.println("AYagoWriter: Error writing to file: " + fileName);
+			System.out.println("YagoWriter: Error writing to file.");
 		}
-		
 	}
 	
 }

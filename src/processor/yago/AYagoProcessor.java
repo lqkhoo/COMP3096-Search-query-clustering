@@ -1,8 +1,5 @@
 package processor.yago;
 
-import reader.YagoReader;
-import writer.YagoWriter;
-
 public abstract class AYagoProcessor {
 	
 	public static final String TSV = "tsv";
@@ -10,8 +7,6 @@ public abstract class AYagoProcessor {
 	
 	protected String inputFileType;
 	protected String outputFileType;
-	protected YagoReader yagoReader;
-	protected YagoWriter yagoWriter;
 	
 	public final void process() throws UnsupportedOperationException {
 		if(this.inputFileType.equals(TSV)) {
@@ -30,5 +25,5 @@ public abstract class AYagoProcessor {
 	public void processTtl() throws UnsupportedOperationException {
 		throw new UnsupportedOperationException();
 	}
-
+	
 }

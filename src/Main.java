@@ -1,3 +1,6 @@
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import processor.IQueryClusterer;
 import processor.Preprocessor;
 import processor.QChtc;
@@ -66,7 +69,9 @@ public class Main {
 		
 		//preprocessQueryLogs();
 		//sampleFiles("input/yago/tsv");
-		processYago();
+		
+		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
+		processYago();		
 		
 	}
 	
