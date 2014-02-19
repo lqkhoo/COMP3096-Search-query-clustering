@@ -17,7 +17,7 @@ public class Main {
 	private static IQueryClusterer clusterer;
 	private static BigFileSampler sampler;
 	private static YagoProcessor yagoProcessor;
-	private static MongoWriter mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+	private static MongoWriter mongoWriter;
 	
 	/** Preprocessor - Take logs and output segmented JSON search session objects */
 	private static void preprocessQueryLogs() {
@@ -50,6 +50,8 @@ public class Main {
 	 * 
 	 */
 	private static void processYago() {
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
 				//new YagoSimpleTypesProcessor(mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
 				//new YagoTypesProcessor(mongoWriter, "output/sampler-out/yagoTypes.tsv", "tsv")
@@ -63,6 +65,7 @@ public class Main {
 				
 		});
 		yagoProcessor.run();
+		mongoWriter.close();
 	}
 	
 	/** */
@@ -71,11 +74,11 @@ public class Main {
 		//preprocessQueryLogs();
 		//sampleFiles("input/yago/tsv");
 		
-		processYago();
+		//processYago();
 		//System.out.println(mongoWriter.getEntityCount());
-		
+		//System.out.println(mongoWriter.getEntity("Walter Oi"));
 		//WARNING
-		//mongoWriter.dropDatabase();
+		// // //mongoWriter.dropDatabase // ();
 		//WARNING
 		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!

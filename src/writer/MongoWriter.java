@@ -1,11 +1,13 @@
 package writer;
 
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.mongodb.BasicDBList;
+import com.mongodb.DBCursor;
 import com.mongodb.Mongo;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -91,52 +93,6 @@ public class MongoWriter {
 		this.entities.update(selector, insertionOperator, true, false);
 		this.entities.update(selector, addOperator, false, false);
 		
-		/*
-		document = this.entities.findOne(new BasicDBObject("name", name));
-		
-		// document does not exist
-		if(document == null) {
-			
-
-			
-
-			
-			relationList = new BasicDBList();
-			relationList.add(relationValue);
-			
-			relation = new BasicDBObject();
-			relation.put(relationKey, relationList);
-			
-			document = new BasicDBObject();
-			document.put("name", name);
-			document.put("cleanName", cleanName);
-			document.put("disambig", disambig);
-			document.put("relations", relation);
-			
-			this.entities.insert(document);
-		} else {
-			// document exists
-			relation = (BasicDBObject) document.get("relations");
-			relationList = (BasicDBList) relation.get(relationKey);
-			
-			// but relation does not
-			if(relationList == null) {
-				relationList = new BasicDBList();
-				relationList.add(relationValue);
-				relation.put(relationKey, relationList);
-				
-				document.put("relations", relation);
-				entities.save(document);
-			} else {
-				
-				if(! relationList.contains(relationValue)) {
-					relationList.add(relationValue);
-				}
-				entities.save(document);
-			}
-		}
-		*/
-		
 		this.updateCount++;
 		if(this.updateCount % 50000 == 0) {
 			this.currentTime = System.currentTimeMillis();
@@ -155,8 +111,17 @@ public class MongoWriter {
 		return this.classes;
 	}
 	
-	public DBObject getEntity(String cleanName) {
-		return this.entities.findOne(new BasicDBObject("cleanName", cleanName));
+	public ArrayList<DBObject> getEntity(String cleanName) {
+		ArrayList<DBObject> items = new ArrayList<DBObject>();
+		DBCursor cursor = this.entities.find(new BasicDBObject("cleanName", cleanName));
+		try {
+			while(cursor.hasNext()) {
+				items.add(cursor.next());
+			}
+		} finally {
+			cursor.close();
+		}
+		return items;
 	}
 	
 	public void deleteEntity(String cleanName) {

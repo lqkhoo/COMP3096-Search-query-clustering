@@ -40,9 +40,6 @@ public class YagoWikipediaInfoProcessor extends AYagoProcessor {
 				} else {
 					relationTarget = lineMatcher.group(4);
 				}
-				System.out.println(name);
-				System.out.println(relation);
-				System.out.println(relationTarget);
 								
 				mongoWriter.addOrUpdateEntity(name, relation, relationTarget);
 			}
