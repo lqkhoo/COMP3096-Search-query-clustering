@@ -1,9 +1,9 @@
 package processor;
+
 /**
  * Class that calculates the query distance between two strings
  * 
  * @author Li Quan Khoo
- *
  */
 public class QueryDistance {
 	

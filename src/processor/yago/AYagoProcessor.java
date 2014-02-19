@@ -3,6 +3,11 @@ package processor.yago;
 import reader.YagoReader;
 import writer.MongoWriter;
 
+/**
+ * Abstract class providing base functionality for Yago file processors
+ * 
+ * @author Li Quan Khoo
+ */
 public abstract class AYagoProcessor {
 	
 	public static final String TSV = "tsv";

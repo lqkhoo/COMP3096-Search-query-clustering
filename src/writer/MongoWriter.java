@@ -11,6 +11,11 @@ import com.mongodb.DBCollection;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
+/**
+ * Class handling connections to a MongoDB instance for YAGO reader output
+ * 
+ * @author Li Quan Khoo
+ */
 public class MongoWriter {
 	
 	private Mongo mongoClient;

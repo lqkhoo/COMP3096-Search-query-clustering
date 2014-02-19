@@ -5,14 +5,12 @@ import java.util.ArrayList;
 import processor.yago.AYagoProcessor;
 
 /**
- * 
- * The class controlling all processing involving YAGO input files.
+ * The class that batch-processes YAGO input files.
  * 
  * Note: This class calls the specialized YAGO processor classes -
  * they do not subclass this class.
  * 
  * @author Li Quan Khoo
- *
  */
 public class YagoProcessor {
 	

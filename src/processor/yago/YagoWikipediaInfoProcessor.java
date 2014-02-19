@@ -5,6 +5,11 @@ import java.util.regex.Pattern;
 
 import writer.MongoWriter;
 
+/**
+ * Specialized processor for the Yago file "yagoWikipediaInfo"
+ * 
+ * @author Li Quan Khoo
+ */
 public class YagoWikipediaInfoProcessor extends AYagoProcessor {
 
 	public YagoWikipediaInfoProcessor(MongoWriter mongoWriter, String inputFilePath, String inputFileType) {

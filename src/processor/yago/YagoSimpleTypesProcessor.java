@@ -6,14 +6,9 @@ import java.util.regex.Pattern;
 import writer.MongoWriter;
 
 /**
- * Designed to process Yago entity type declaration files - namely:
- * 
- * yagoSimpleTypes			done
- * yagoImportantTypes		done
- * yagoTransitiveType		done
+ * Specialized processor for the Yago file "yagoSimpleTypes"
  * 
  * @author Li Quan Khoo
- *
  */
 public class YagoSimpleTypesProcessor extends AYagoProcessor {
 		
