@@ -1,5 +1,6 @@
 package processor.yago;
 
+import model.YagoHierarchy;
 import reader.YagoReader;
 import writer.MongoWriter;
 
@@ -16,9 +17,16 @@ public abstract class AYagoProcessor {
 	protected String inputFileType;
 	protected YagoReader yagoReader;
 	protected MongoWriter mongoWriter;
-	
+	protected YagoHierarchy hierarchy;
+		
 	public AYagoProcessor(MongoWriter mongoWriter, String inputFilePath, String inputFileType) {
 		this.mongoWriter = mongoWriter;
+		this.inputFileType = inputFileType;
+		this.yagoReader = new YagoReader(inputFilePath);
+	}
+	
+	public AYagoProcessor(YagoHierarchy hierarchy, String inputFilePath, String inputFileType) {
+		this.hierarchy = hierarchy;
 		this.inputFileType = inputFileType;
 		this.yagoReader = new YagoReader(inputFilePath);
 	}
