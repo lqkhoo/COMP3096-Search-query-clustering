@@ -5,9 +5,9 @@ import java.util.regex.Pattern;
 
 import writer.MongoWriter;
 
-public class YagoTypesProcessor extends AYagoProcessor {
-	
-	public YagoTypesProcessor(MongoWriter mongoWriter, String inputFilePath, String inputFileType) {
+public class YagoWikipediaInfoProcessor extends AYagoProcessor {
+
+	public YagoWikipediaInfoProcessor(MongoWriter mongoWriter, String inputFilePath, String inputFileType) {
 		super(mongoWriter, inputFilePath, inputFileType);
 	}
 	
@@ -16,8 +16,8 @@ public class YagoTypesProcessor extends AYagoProcessor {
 		String line;
 		line = this.yagoReader.readNextLine_Tsv();
 		
-		// schema: <id_foo_bar_baz> \t <entity> \t rdf:type \t <wordnet / wikicategory / etc>
-		Pattern linePattern = Pattern.compile("([\\t](.*)[\\t](.*)[\\t](.*)[\\t](.*))");
+		// schema: \t <entity> \t <relation> \t <target OR ignore for hasWikipediaArticleLength> \t (int, only for hasWikipediaArticleLength)?
+		Pattern linePattern = Pattern.compile("([\\t](.*)[\\t](.*)[\\t](.*)[\\t](.*)?)");
 		Matcher lineMatcher;
 
 		String name;
@@ -30,14 +30,15 @@ public class YagoTypesProcessor extends AYagoProcessor {
 								
 				name = lineMatcher.group(2);
 				relation = lineMatcher.group(3);
-				relationTarget = lineMatcher.group(4);
-				
-				/*
+				if(relation.equals("<hasWikipediaArticleLength>")) {
+					relationTarget = lineMatcher.group(5);
+				} else {
+					relationTarget = lineMatcher.group(4);
+				}
 				System.out.println(name);
 				System.out.println(relation);
 				System.out.println(relationTarget);
-				*/
-				
+								
 				mongoWriter.addOrUpdateEntity(name, relation, relationTarget);
 			}
 			line = this.yagoReader.readNextLine_Tsv();

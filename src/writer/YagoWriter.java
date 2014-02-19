@@ -5,9 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.regex.Pattern;
-
-import model.Triple;
 
 /**
  * Abstract.
@@ -31,6 +28,7 @@ import model.Triple;
  * 
  */
 
+@Deprecated
 public class YagoWriter {
 	
 	protected static final String[] HASH_LIST = new String[] {

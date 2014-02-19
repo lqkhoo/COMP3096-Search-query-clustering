@@ -11,6 +11,7 @@ import java.io.IOException;
  * @author Li Quan Khoo
  *
  */
+@Deprecated
 public class YagoDumpWriter {
 	
 	private boolean isBufferOpen = false;

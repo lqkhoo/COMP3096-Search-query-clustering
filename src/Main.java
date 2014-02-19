@@ -1,14 +1,15 @@
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import processor.IQueryClusterer;
 import processor.Preprocessor;
 import processor.QChtc;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
+import processor.yago.YagoImportantTypesProcessor;
+import processor.yago.YagoSimpleTypesProcessor;
+import processor.yago.YagoTransitiveTypesProcessor;
 import processor.yago.YagoTypesProcessor;
+import processor.yago.YagoWikipediaInfoProcessor;
 import reader.BigFileSampler;
-
+import writer.MongoWriter;
 
 public class Main {
 	
@@ -16,29 +17,21 @@ public class Main {
 	private static IQueryClusterer clusterer;
 	private static BigFileSampler sampler;
 	private static YagoProcessor yagoProcessor;
+	private static MongoWriter mongoWriter = new MongoWriter("localhost", 27017, "yago2");
 	
-	/**
-	 * Preprocessor - Take logs and output segmented JSON search session objects
-	 * 
-	 */
+	/** Preprocessor - Take logs and output segmented JSON search session objects */
 	private static void preprocessQueryLogs() {
 		preprocessor = new Preprocessor();
 		preprocessor.run();
 	}
 	
-	/**
-	 * Query clusterer
-	 * 
-	 */
+	/** Query clusterer */
 	private static void runClusterer() {
 		clusterer = new QChtc();
 		// stub method
 	}
 	
-	/**
-	 * Sample - Takes large files and outputs the first n lines to another file
-	 *  @param inputDir
-	 */
+	/** Sample - Takes large files and outputs the first n lines to another file */
 	private static void sampleFiles(String inputDir) {
 		sampler = new BigFileSampler(inputDir);
 		sampler.run();
@@ -58,29 +51,46 @@ public class Main {
 	 */
 	private static void processYago() {
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
-				new YagoTypesProcessor("input/yago/tsv/yagoSimpleTypes.tsv", "tsv", "output/yago-out/entities", "tsv", "yagoSimpleTypes-dump"),
-				new YagoTypesProcessor("input/yago/tsv/yagoImportantTypes.tsv", "tsv", "output/yago-out/entities", "tsv", "yagoImportantTypes-dump"),
-				new YagoTypesProcessor("input/yago/tsv/yagoTransitiveType.tsv", "tsv", "output/yago-out/entities", "tsv", "yagoTransitiveType-dump")
+				//new YagoSimpleTypesProcessor(mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
+				//new YagoTypesProcessor(mongoWriter, "output/sampler-out/yagoTypes.tsv", "tsv")
+				//new YagoWikipediaInfoProcessor(mongoWriter, "output/sampler-out/yagoWikipediaInfo.tsv", "tsv")
+				
+				new YagoSimpleTypesProcessor(		mongoWriter, "input/yago/tsv/yagoSimpleTypes.tsv", "tsv"),
+				new YagoImportantTypesProcessor(	mongoWriter, "input/yago/tsv/yagoImportantTypes.tsv", "tsv"),
+				new YagoTransitiveTypesProcessor(	mongoWriter, "input/yago/tsv/yagoTransitiveType.tsv", "tsv"),
+				new YagoTypesProcessor(				mongoWriter, "input/yago/tsv/yagoTypes.tsv", "tsv"),
+				new YagoWikipediaInfoProcessor(		mongoWriter, "input/yago/tsv/yagoWikipediaInfo.tsv", "tsv")
 		});
 		yagoProcessor.run();
 	}
 	
-	private static void regexTest() {
-		System.out.println(Pattern.matches("([\\t][<]([\\S]*)[>][\\t][\\S]*[\\t][<][\\S]*[>][\\t])?",
-				"\t<communist_Czechoslovakia>\trdf:type\t<wordnet_communist_economy_108367579>\t"));
+	private static void mongoTest() {
+		
+		mongoWriter.dropDatabase();
+		//System.out.println(mongoWriter.getEntity("Gumki"));
+		//System.out.println(mongoWriter.getEntityCount());
+		/*
+		mongoWriter.addOrUpdateEntity("<test_Name>", "rdf:type", "<yagoEntity_foo_bar_baz>");
+		System.out.println(mongoWriter.getEntities().getIndexInfo());
+		System.out.println(mongoWriter.getEntityCount());
+		System.out.println(mongoWriter.getEntity("test Name"));
+		mongoWriter.close();
+		*/
+
 	}
 	
 	
 	/** */
 	public static void main(String[] args) {
 		
-		//regexTest();
-		
 		//preprocessQueryLogs();
 		//sampleFiles("input/yago/tsv");
 		
+		processYago();
+		//mongoTest();
+		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
-		processYago();		
+
 		
 	}
 	

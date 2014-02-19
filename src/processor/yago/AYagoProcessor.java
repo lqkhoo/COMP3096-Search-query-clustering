@@ -1,12 +1,22 @@
 package processor.yago;
 
+import reader.YagoReader;
+import writer.MongoWriter;
+
 public abstract class AYagoProcessor {
 	
 	public static final String TSV = "tsv";
 	public static final String TTL = "ttl";
 	
 	protected String inputFileType;
-	protected String outputFileType;
+	protected YagoReader yagoReader;
+	protected MongoWriter mongoWriter;
+	
+	public AYagoProcessor(MongoWriter mongoWriter, String inputFilePath, String inputFileType) {
+		this.mongoWriter = mongoWriter;
+		this.inputFileType = inputFileType;
+		this.yagoReader = new YagoReader(inputFilePath);
+	}
 	
 	public final void process() throws UnsupportedOperationException {
 		if(this.inputFileType.equals(TSV)) {
