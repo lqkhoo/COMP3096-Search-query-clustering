@@ -60,25 +60,10 @@ public class Main {
 				new YagoTransitiveTypesProcessor(	mongoWriter, "input/yago/tsv/yagoTransitiveType.tsv", "tsv"),
 				new YagoTypesProcessor(				mongoWriter, "input/yago/tsv/yagoTypes.tsv", "tsv"),
 				new YagoWikipediaInfoProcessor(		mongoWriter, "input/yago/tsv/yagoWikipediaInfo.tsv", "tsv")
+				
 		});
 		yagoProcessor.run();
 	}
-	
-	private static void mongoTest() {
-		
-		mongoWriter.dropDatabase();
-		//System.out.println(mongoWriter.getEntity("Gumki"));
-		//System.out.println(mongoWriter.getEntityCount());
-		/*
-		mongoWriter.addOrUpdateEntity("<test_Name>", "rdf:type", "<yagoEntity_foo_bar_baz>");
-		System.out.println(mongoWriter.getEntities().getIndexInfo());
-		System.out.println(mongoWriter.getEntityCount());
-		System.out.println(mongoWriter.getEntity("test Name"));
-		mongoWriter.close();
-		*/
-
-	}
-	
 	
 	/** */
 	public static void main(String[] args) {
@@ -87,7 +72,11 @@ public class Main {
 		//sampleFiles("input/yago/tsv");
 		
 		processYago();
-		//mongoTest();
+		//System.out.println(mongoWriter.getEntityCount());
+		
+		//WARNING
+		//mongoWriter.dropDatabase();
+		//WARNING
 		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
 

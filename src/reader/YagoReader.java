@@ -86,7 +86,7 @@ public class YagoReader {
 				if(line != null) {
 					bytesRead += line.getBytes().length;
 					if(bytesRead > fileSize / 100 * lastReportPercent) {
-						System.out.println("    ~" + lastReportPercent + "%");
+						System.out.println("YagoReader: Read ~" + lastReportPercent + "% of " + inputFilePath);
 						lastReportPercent += reportPerPercent;
 					}
 				}
