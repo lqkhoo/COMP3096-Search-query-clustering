@@ -138,10 +138,10 @@ public class Main {
 	/** */
 	public static void main(String[] args) {
 		
-		//preprocessQueryLogs();
+		preprocessQueryLogs();
 		//sampleFiles("input/yago/tsv");
 		
-		getYagoHierarchy();
+		//getYagoHierarchy();
 		//mongoDBQueryPerformanceTest();
 		//System.out.println(mongoWriter.getEntityCount());
 		

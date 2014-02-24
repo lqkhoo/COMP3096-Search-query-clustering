@@ -106,8 +106,8 @@ public class AolLogReader {
 						this.nextLogObject = new LogObject(nextLine);
 						return this.nextLogObject;
 					} catch (NumberFormatException e) { // thrown by Integer.parseInt()
+						System.out.println(nextLine);
 						System.out.println(e);
-						System.out.println("foo");
 						return null;
 					} catch (ParseException e) { // thrown by SimpleDateFormat.parse()
 						return null;
