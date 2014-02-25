@@ -1,7 +1,10 @@
+import java.net.UnknownHostException;
+
 import model.YagoHierarchy;
 import processor.IQueryClusterer;
 import processor.Preprocessor;
 import processor.QChtc;
+import processor.QueryMapper;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
 import processor.yago.YagoImportantTypesProcessor;
@@ -13,6 +16,12 @@ import processor.yago.YagoTypesProcessor;
 import processor.yago.YagoWikipediaInfoProcessor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DB;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
+import com.mongodb.Mongo;
 
 import reader.BigFileSampler;
 import writer.MongoWriter;
@@ -24,6 +33,7 @@ public class Main {
 	private static BigFileSampler sampler;
 	private static YagoProcessor yagoProcessor;
 	private static MongoWriter mongoWriter;
+	private static QueryMapper queryMapper;
 	
 	/** Preprocessor - Take logs and output segmented JSON search session objects */
 	private static void preprocessQueryLogs() {
@@ -55,10 +65,13 @@ public class Main {
 	 * If we need classes mapping to entities then change each processor to have multiple file writers.
 	 * 
 	 */
-	
 	private static void getYagoEntities() {
 		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
+				
+				// Tests --
+				
+				//new YagoSimpleTypesProcessor(		mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
 				
 				// Already in database -- 
 				
@@ -93,7 +106,7 @@ public class Main {
 		yagoProcessor.run();
 		hierarchy.toFile();
 	}
-	
+		
 	private static void mongoDBQueryPerformanceTest() {
 		
 		long startTime = System.currentTimeMillis();
@@ -134,16 +147,17 @@ public class Main {
 		System.out.println("Main: MongoDB performance test: " + timeTaken + " seconds, queried " + entities.length + " entities, " + classes.length + " classes.");
 		mongoWriter.close();
 	}
+
 	
 	/** */
 	public static void main(String[] args) {
 		
-		preprocessQueryLogs();
+		// preprocessQueryLogs();
 		//sampleFiles("input/yago/tsv");
 		
+		//getYagoEntities();
 		//getYagoHierarchy();
-		//mongoDBQueryPerformanceTest();
-		//System.out.println(mongoWriter.getEntityCount());
+		mongoDBQueryPerformanceTest();
 		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
 

@@ -39,7 +39,7 @@ public class MongoWriter {
 			this.entities = db.getCollection("entities");
 			this.classes = db.getCollection("classes");
 			
-			this.entities.ensureIndex(new BasicDBObject("name", 1).append("cleanName", 1));
+			this.entities.ensureIndex(new BasicDBObject("name", 1).append("cleanName", 1).append("searchString", 1));
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -59,15 +59,12 @@ public class MongoWriter {
 	 * @param relationValue		Value of the relation -- what's this entity related to via the given relation. Give the raw value that YAGO gives
 	 */
 	public void addOrUpdateEntity(String name, String relationKey, String relationValue) {
-		
-		DBObject document;
-		BasicDBObject relation;
-		BasicDBList relationList;
-		
+				
 		Pattern qualifiedNamePattern = Pattern.compile("((.*)\\((.*)\\))");
 		Matcher qualifiedNameMatcher;
 		
 		String cleanName = name.replace("_", " ").replace("<", "").replace(">", "");
+		String searchString = cleanName.toLowerCase();
 		String disambig = "";
 		
 		qualifiedNameMatcher = qualifiedNamePattern.matcher(cleanName);
@@ -83,6 +80,7 @@ public class MongoWriter {
 		BasicDBObject addFields = new BasicDBObject();
 		setFields.put("name", name);
 		setFields.put("cleanName", cleanName);
+		setFields.put("searchString", searchString);
 		setFields.put("disambig", disambig);
 		setFields.put("relations", new BasicDBObject());
 		
