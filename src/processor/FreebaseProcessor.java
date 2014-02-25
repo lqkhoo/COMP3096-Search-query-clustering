@@ -48,25 +48,8 @@ public class FreebaseProcessor {
 	/*
 	public static void fetch(String query){
 		try {
-			properties.load(new FileInputStream("freebase.properties"));
-			HttpTransport httpTransport = new NetHttpTransport();
-			HttpRequestFactory requestFactory = httpTransport
-					.createRequestFactory();
-			JSONParser parser = new JSONParser();
-			GenericUrl url = new GenericUrl(
-					"https://www.googleapis.com/freebase/v1/search");
-			url.put("query", query);
-			url.put("limit", "10");
-			url.put("indent", "true");
-			url.put("key", properties.get("AIzaSyDjkq6Ve2Z1ct_ejyYj6isLbL3mKof8F1A"));
-			HttpRequest request = requestFactory.buildGetRequest(url);
-			HttpResponse httpResponse = request.execute();
-			JSONObject response = (JSONObject) parser.parse(httpResponse
-					.parseAsString());
-			JSONArray results = (JSONArray) response.get("result");
-			for (Object result : results) {
-				System.out.println(JsonPath.read(result, "$.name").toString());
-			}
+		freebase.research.query(query);
+			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
