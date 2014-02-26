@@ -40,7 +40,7 @@ public class YagoWikipediaInfoProcessor extends AYagoProcessor {
 				} else {
 					relationTarget = lineMatcher.group(4);
 				}
-								
+				
 				mongoWriter.addOrUpdateEntity(name, relation, relationTarget);
 			}
 			line = this.yagoReader.readNextLine_Tsv();

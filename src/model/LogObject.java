@@ -11,6 +11,7 @@ public class LogObject {
 	
 	private Integer anonId;
 	private String query;
+	private String cleanedQuery;
 	private Date queryTime;
 	private String itemRank; // not really intended to be used. Change to int otherwise.
 	private String clickUrl;
@@ -27,6 +28,8 @@ public class LogObject {
 	public Integer getAnonId() { return this.anonId; }
 	public String getQuery() { return this.query; }
 	public void setQuery(String str) { this.query = str; }
+	public String getCleanedQuery() { return this.cleanedQuery; }
+	public void setCleanedQuery(String str) { this.cleanedQuery = str; }
 	public Date getQueryTime() { return this.queryTime; }
 	public String getItemRank() { return this.itemRank; }
 	public String getClickUrl() { return this.clickUrl; }

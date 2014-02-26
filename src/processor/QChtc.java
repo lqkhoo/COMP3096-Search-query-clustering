@@ -2,7 +2,7 @@ package processor;
 
 import java.util.ArrayList;
 
-import model.SearchSession;
+import model.SearchSessionSerial;
 
 
 /**
@@ -18,7 +18,7 @@ public class QChtc implements IQueryClusterer {
 	
 	//TODO
 	@Override
-	public void cluster(ArrayList<SearchSession> searchSessions) {
+	public void cluster(ArrayList<SearchSessionSerial> searchSessions) {
 		
 		
 		

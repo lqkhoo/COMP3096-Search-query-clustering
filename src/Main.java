@@ -1,5 +1,3 @@
-import java.net.UnknownHostException;
-
 import model.YagoHierarchy;
 import processor.IQueryClusterer;
 import processor.Preprocessor;
@@ -8,12 +6,15 @@ import processor.QueryMapper;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
 import processor.yago.YagoImportantTypesProcessor;
+import processor.yago.YagoLabelsProcessor;
 import processor.yago.YagoSimpleTaxonomyProcessor;
 import processor.yago.YagoSimpleTypesProcessor;
 import processor.yago.YagoTaxonomyProcessor;
 import processor.yago.YagoTransitiveTypesProcessor;
 import processor.yago.YagoTypesProcessor;
 import processor.yago.YagoWikipediaInfoProcessor;
+import processor.yago.YagoWordnetDomainsProcessor;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mongodb.BasicDBObject;
@@ -53,18 +54,6 @@ public class Main {
 		sampler.run();
 	}
 	
-	/**
-	 * Files:
-	 * 
-	 * yagoDBPediaClasses:		{ wikicategories | wordnet ids }	--- owl:equivalentClass -->		{ dbpedia href http:// }
-	 * yagoDBPediaInstances:	{ dbpedia entities }				--> owl:sameAs -->				{ dbpedia href http:// }
-	 * yagoFacts:				{ yagoFactId , yagoEntity }			--> yagoRelation -->			{ yagoEntity }
-	 * yagoImportantTypes:		{ yago ???
-	 * 
-	 * Right now all output is focused on entity -- Files are about entities and their mappings to everything else -- dbpedia classes etc.
-	 * If we need classes mapping to entities then change each processor to have multiple file writers.
-	 * 
-	 */
 	private static void getYagoEntities() {
 		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
@@ -73,6 +62,7 @@ public class Main {
 				
 				//new YagoSimpleTypesProcessor(		mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
 				
+				
 				// Already in database -- 
 				
 				//new YagoSimpleTypesProcessor(		mongoWriter, "input/yago/tsv/yagoSimpleTypes.tsv", "tsv"),
@@ -80,6 +70,11 @@ public class Main {
 				//new YagoTransitiveTypesProcessor(	mongoWriter, "input/yago/tsv/yagoTransitiveType.tsv", "tsv"),
 				//new YagoTypesProcessor(			mongoWriter, "input/yago/tsv/yagoTypes.tsv", "tsv"),
 				//new YagoWikipediaInfoProcessor(	mongoWriter, "input/yago/tsv/yagoWikipediaInfo.tsv", "tsv")
+				//new YagoWordnetDomainsProcessor(	mongoWriter, "input/yago/tsv/yagoWordnetDomains.tsv", "tsv")
+				
+				// Not run --
+				
+				//new YagoLabelsProcessor( 			mongoWriter, "input/yago/tsv/yagoLabels.tsv", "tsv")
 				
 		});
 		yagoProcessor.run();
@@ -92,7 +87,7 @@ public class Main {
 		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
 				
 				// Tests --
-
+				
 				//new YagoSimpleTypesProcessor(mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
 				//new YagoTypesProcessor(mongoWriter, "output/sampler-out/yagoTypes.tsv", "tsv")
 				//new YagoWikipediaInfoProcessor(mongoWriter, "output/sampler-out/yagoWikipediaInfo.tsv", "tsv")
@@ -106,7 +101,114 @@ public class Main {
 		yagoProcessor.run();
 		hierarchy.toFile();
 	}
+	
+	private static void mapQueries() {
+		queryMapper = new QueryMapper();
+		queryMapper.map();
+	}
+	
+	// Removes entities with just cleanName and null name fields which I have no idea how they got into the database
+	/*
+	private static void removeNullNamedEntities() {
+		int updateCount = 0;
 		
+		DBCollection entities;
+		DBCursor cursor;
+		DBObject entity;
+		
+		String name;
+		
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		
+		entities = mongoWriter.getEntities();
+		cursor = entities.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			entity = cursor.next();
+			name = (String) entity.get("name");
+			if(name == null) {
+				entities.remove(entity);
+				updateCount++;
+				if(updateCount % 1000 == 0) {
+					System.out.println("Removed " + updateCount / 1000 + "k entities.");
+				}
+			}
+			
+		}
+		System.out.println("Update operation complete");
+		
+		mongoWriter.close();
+	}
+	*/
+	
+	// Removes trailing space in about 300k cleanName attributes
+	/*
+	private static void fixEntitiesCleanNameWhitespace() {
+		
+		int updateCount = 0;
+		
+		DBCollection entities;
+		DBCursor cursor;
+		DBObject entity;
+		
+		Pattern pattern = Pattern.compile("(^(.*)[ ]$)");
+		Matcher matcher;
+		
+		String name;
+		String cleanName;
+		
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		
+		entities = mongoWriter.getEntities();
+		cursor = entities.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			entity = cursor.next();
+			name = (String) entity.get("name");
+			cleanName = (String) entity.get("cleanName");
+			matcher = pattern.matcher(cleanName);
+			if(matcher.find()) {
+				cleanName = matcher.group(2);
+				entities.update(new BasicDBObject("name", name), new BasicDBObject("cleanName", cleanName), false, false);
+				updateCount++;
+				if(updateCount % 1000 == 0) {
+					System.out.println("Updated " + updateCount / 1000 + "k entities.");
+				}
+			}
+			
+		}
+		System.out.println("Update operation complete");
+		
+		mongoWriter.close();
+	}
+	*/
+	
+	private static void printEntities() {
+		
+		DBCollection entities;
+		DBCursor cursor;
+		DBObject entity;
+		
+		String name;
+		String cleanName;
+		
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2test");
+		
+		entities = mongoWriter.getEntities();
+		cursor = entities.find(new BasicDBObject());
+		
+		System.out.println(entities.count());
+		
+		try {
+			while(cursor.hasNext()) {
+				entity = cursor.next();
+				name = (String) entity.get("name");
+				cleanName = (String) entity.get("cleanName");
+			}
+		} finally {
+			mongoWriter.close();
+		}
+
+	}
+	
 	private static void mongoDBQueryPerformanceTest() {
 		
 		long startTime = System.currentTimeMillis();
@@ -137,7 +239,7 @@ public class Main {
 		};
 		
 		for(String entity : entities) {
-			System.out.println(gson.toJson(mongoWriter.getEntity(entity)));
+			System.out.println(gson.toJson(mongoWriter.getEntity(new BasicDBObject("cleanName", entity))));
 		}
 		
 		// classes
@@ -152,12 +254,15 @@ public class Main {
 	/** */
 	public static void main(String[] args) {
 		
-		// preprocessQueryLogs();
-		//sampleFiles("input/yago/tsv");
+		preprocessQueryLogs();
+		// sampleFiles("input/yago/tsv");
 		
-		//getYagoEntities();
-		//getYagoHierarchy();
-		mongoDBQueryPerformanceTest();
+		// getYagoEntities();
+		// getYagoHierarchy();
+		// mapQueries();
+		
+		// mongoDBQueryPerformanceTest();
+		// printEntities();
 		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
 

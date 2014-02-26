@@ -97,11 +97,11 @@ public class QueryDistance {
 		int maxLen = Math.max(str1.length(), str2.length());
 		
 		// working matrix
-		int[] v0 = new int[maxLen];
-		int[] v1 = new int[maxLen];
+		int[] v0 = new int[maxLen + 1];
+		int[] v1 = new int[maxLen + 1];
 		
 		// algorithm
-		for(int i = 0; i <= maxLen; i++) {
+		for(int i = 0; i < v0.length; i++) {
 			v0[i] = i;
 		}
 		
@@ -126,11 +126,10 @@ public class QueryDistance {
 		
 		// return result
 		if(normalize) {
-			return v1[str2.length()] / maxLen;
+			return (double) v1[str2.length()] / maxLen;
 		} else {
-			return v1[str2.length()];
+			return (double) v1[str2.length()];
 		}
-		
 	}
 	
 	/*
@@ -143,7 +142,9 @@ public class QueryDistance {
 	}
 	
 	public static double jaccard(String str1, String str2, int nGramSize) {
-		
+		if(str1.length() < nGramSize || str2.length() < nGramSize) {
+			return 1;
+		}
 		// Normalized Jaccard distance formula given by:
 		// 1 - ( intersection -> no. of ngrams in both strings ) / ( union -> no. ngrams in both strings)
 		

@@ -25,6 +25,7 @@ public class MongoWriter {
 	private DB db;
 	private DBCollection entities;
 	private DBCollection classes;
+	private DBCollection entityMappings;
 	
 	private long updateCount = 0;
 	private long prevTime = System.currentTimeMillis();
@@ -38,8 +39,10 @@ public class MongoWriter {
 			
 			this.entities = db.getCollection("entities");
 			this.classes = db.getCollection("classes");
+			this.entityMappings = db.getCollection("entityMappings");
 			
 			this.entities.ensureIndex(new BasicDBObject("name", 1).append("cleanName", 1).append("searchString", 1));
+			this.entityMappings.ensureIndex(new BasicDBObject("name", 1));
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -59,12 +62,12 @@ public class MongoWriter {
 	 * @param relationValue		Value of the relation -- what's this entity related to via the given relation. Give the raw value that YAGO gives
 	 */
 	public void addOrUpdateEntity(String name, String relationKey, String relationValue) {
-				
-		Pattern qualifiedNamePattern = Pattern.compile("((.*)\\((.*)\\))");
+		
+		Pattern qualifiedNamePattern = Pattern.compile("(^(.*)[ ]\\((.*)\\)$)");
 		Matcher qualifiedNameMatcher;
 		
 		String cleanName = name.replace("_", " ").replace("<", "").replace(">", "");
-		String searchString = cleanName.toLowerCase();
+		String searchString;
 		String disambig = "";
 		
 		qualifiedNameMatcher = qualifiedNamePattern.matcher(cleanName);
@@ -72,7 +75,22 @@ public class MongoWriter {
 			cleanName = qualifiedNameMatcher.group(2);
 			disambig = qualifiedNameMatcher.group(3);
 		}
+		searchString = cleanName.toLowerCase();
 		
+		addOrUpdateEntity(name, cleanName, disambig, searchString, relationKey, relationValue);
+	}
+	
+	/**
+	 * Custom entity formatting and entry. Currently used for entering wordnet entities, which have different formatting
+	 * @param name
+	 * @param cleanName
+	 * @param disambig
+	 * @param searchString
+	 * @param relationKey
+	 * @param relationValue
+	 */
+	public void addOrUpdateEntity(String name, String cleanName, String disambig,
+			String searchString, String relationKey, String relationValue) {
 		BasicDBObject selector = new BasicDBObject("name", name);
 		BasicDBObject insertionOperator = new BasicDBObject();
 		BasicDBObject addOperator = new BasicDBObject();
@@ -92,13 +110,13 @@ public class MongoWriter {
 		this.entities.update(selector, addOperator, false, false);
 		
 		this.updateCount++;
+
 		if(this.updateCount % 50000 == 0) {
 			this.currentTime = System.currentTimeMillis();
 			int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
 			this.prevTime = this.currentTime;
 			System.out.println("MongoWriter: " + this.updateCount / 1000 + "k transactions (" + seconds + "s)");
 		}
-		
 	}
 	
 	public DBCollection getEntities() {
@@ -109,9 +127,9 @@ public class MongoWriter {
 		return this.classes;
 	}
 	
-	public ArrayList<DBObject> getEntity(String cleanName) {
+	public ArrayList<DBObject> getEntity(BasicDBObject criteria) {
 		ArrayList<DBObject> items = new ArrayList<DBObject>();
-		DBCursor cursor = this.entities.find(new BasicDBObject("cleanName", cleanName));
+		DBCursor cursor = this.entities.find(criteria);
 		try {
 			while(cursor.hasNext()) {
 				items.add(cursor.next());

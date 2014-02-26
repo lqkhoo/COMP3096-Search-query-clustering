@@ -5,7 +5,7 @@ import reader.AolLogReader;
 import writer.BatchFileWriter;
 
 import model.LogObject;
-import model.SearchSession;
+import model.SearchSessionSerial;
 
 
 
@@ -34,13 +34,18 @@ public class Preprocessor {
 	public static final String DEFAULT_OUTPUT_DIR = "output/preprocessor-out/";
 	private String outputDir;
 	
+	public static final double NORMALIZED_QUERY_DISTANCE_SEGMENTATION_THRESHOLD = 0.3;
+	
 	private AolLogReader logReader;
 	private Cleaner cleaner;
 	private BatchFileWriter writer;
 	
-	private SearchSession currentSession;
+	private SearchSessionSerial currentSession;
 	private long sessionLength;
-	private ArrayList<SearchSession> sessionArray;
+	private ArrayList<SearchSessionSerial> sessionArray;
+	
+	private int sessionIdStart;
+	private int currentSessionId;
 	
 	public Preprocessor() {
 		this(DEFAULT_MAX_SESSIONS, DEFAULT_MAX_SESSION_LENGTH, DEFAULT_OUTPUT_DIR);
@@ -56,7 +61,9 @@ public class Preprocessor {
 		
 		this.currentSession = null;
 		this.sessionLength = 0;
-		this.sessionArray = new ArrayList<SearchSession>();
+		this.sessionArray = new ArrayList<SearchSessionSerial>();
+		this.sessionIdStart = 0;
+		this.currentSessionId = this.sessionIdStart;
 	}
 	
 	/*
@@ -68,50 +75,102 @@ public class Preprocessor {
 		writer.writeToFile(json, "output"); // Write to file
 	}
 	
-	private void timeSplit(LogObject logObj) {
-		while(true) {
-			// If new session, add the log data and we're finished
-			if(currentSession == null) {
-				currentSession = new SearchSession(logObj);
-				return;
-			} else {
-				if(currentSession.getUserId() == logObj.getAnonId()) {
-					sessionLength = logObj.getQueryTime().getTime() - currentSession.getSessionStart().getTime();
-					if(sessionLength < maxSessionLength) { // If session length within normal bounds
-						currentSession.addQuery(logObj.getQuery());
-						currentSession.setSessionEnd(logObj.getQueryTime());
-						return;
-					}
-				}
-			}
-			// Otherwise terminate existing session
-			this.sessionArray.add(currentSession);
-			if(this.sessionArray.size() >= maxSessions) {
-				
-				// do stuff with the full array of sessions here
-				write();
-				
-				// Reset sessionArray
-				this.sessionArray = new ArrayList<SearchSession>();
-			}
-			currentSession = null; // Reset session, loop to beginning to write
+	/**
+	 * Returns a boolean of whether to split the session based on time or not.
+	 * True means split. False means don't 
+	 */
+	private boolean timeSplit(LogObject logLine) {
+		
+		// If current session's user is different to current log's user then definitely split
+		if(currentSession.getUserId() != logLine.getAnonId()) {
+			return true;
 		}
+		
+		sessionLength = logLine.getQueryTime().getTime() - currentSession.getSessionStart().getTime();
+		
+		// If session length is within bounds, don't split
+		if(sessionLength < maxSessionLength) {
+			return false;
+		}
+		
+		// Otherwise split
+		return true;
+	}
+	
+	private boolean queryDistance(LogObject logLine, String previousCleanedQuery) {
+		
+		double queryDistance;
+		
+		if(previousCleanedQuery == null) {
+			return false;
+		} else {
+			queryDistance = QueryDistance.distance(logLine.getCleanedQuery(), previousCleanedQuery);
+			if(queryDistance > 1 - NORMALIZED_QUERY_DISTANCE_SEGMENTATION_THRESHOLD) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private void newSearchSession(LogObject logLine) {
+		this.currentSession = new SearchSessionSerial(this.currentSessionId, logLine);
+		this.currentSessionId++;
 	}
 	
 	public void run() {
+		
+		LogObject logLine;
+		String previousCleanedQuery;
+		boolean split;
 		
 		// Clear output directory
 		writer.deleteFilesInDir(this.outputDir);
 		
 		// Start processing
-		LogObject obj = this.logReader.readNextLine();
-		while(obj != null) {
-			obj.setQuery(cleaner.filter(obj.getQuery()));
-			if(! obj.getQuery().equals("")) {
-				timeSplit(obj);
+		previousCleanedQuery = null;
+		logLine = this.logReader.readNextLine();
+		
+		while(logLine != null) {
+			split = false;
+			logLine.setCleanedQuery(cleaner.filter(logLine.getQuery()));
+			
+			// If query is not nonsense
+			if(! logLine.getCleanedQuery().equals("")) {
+				
+				// If current session is not defined, create a new one
+				if(currentSession == null) {
+					newSearchSession(logLine);
+					previousCleanedQuery = logLine.getCleanedQuery();
+				} else {
+					
+					// Otherwise a session is already in place. Run timesplit() and distance() to determine whether
+					//   to start a new session or maintain the current one
+					split = timeSplit(logLine) || queryDistance(logLine, previousCleanedQuery);
+					
+					previousCleanedQuery = logLine.getCleanedQuery();
+					if(! split) {
+						currentSession.addQuery(logLine.getQuery());
+						currentSession.setSessionEnd(logLine.getQueryTime());
+					} else {
+						
+						this.sessionArray.add(currentSession);
+						if(this.sessionArray.size() >= maxSessions) {
+							
+							// do stuff with the full array of sessions here
+							write();
+							
+							this.sessionArray = new ArrayList<SearchSessionSerial>(); // Reset sessionArray
+						}
+						
+						newSearchSession(logLine);
+						previousCleanedQuery = logLine.getCleanedQuery();
+					}
+				}
 			}
-			obj = this.logReader.readNextLine();
+			
+			logLine = this.logReader.readNextLine();
 		}
+		
 		if(this.sessionArray.size() != 0) {
 			// do stuff with the partially full array of the last sessions here
 			write();

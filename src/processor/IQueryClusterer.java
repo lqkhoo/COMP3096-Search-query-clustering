@@ -2,7 +2,7 @@ package processor;
 
 import java.util.ArrayList;
 
-import model.SearchSession;
+import model.SearchSessionSerial;
 
 /**
  * 
@@ -12,7 +12,7 @@ import model.SearchSession;
 public interface IQueryClusterer {
 	
 	//TODO
-	public void cluster(ArrayList<SearchSession> searchSessions);
+	public void cluster(ArrayList<SearchSessionSerial> searchSessions);
 	//TODO read from file
 	public void cluster();
 	

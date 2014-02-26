@@ -44,6 +44,7 @@ public class YagoTypesProcessor extends AYagoProcessor {
 				*/
 				
 				mongoWriter.addOrUpdateEntity(name, relation, relationTarget);
+				
 			}
 			line = this.yagoReader.readNextLine_Tsv();
 		}
