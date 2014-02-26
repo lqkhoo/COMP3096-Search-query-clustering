@@ -1,7 +1,5 @@
 import model.YagoHierarchy;
-import processor.IQueryClusterer;
 import processor.Preprocessor;
-import processor.QChtc;
 import processor.QueryMapper;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
@@ -30,7 +28,6 @@ import writer.MongoWriter;
 public class Main {
 	
 	private static Preprocessor preprocessor;
-	private static IQueryClusterer clusterer;
 	private static BigFileSampler sampler;
 	private static YagoProcessor yagoProcessor;
 	private static MongoWriter mongoWriter;
@@ -40,12 +37,6 @@ public class Main {
 	private static void preprocessQueryLogs() {
 		preprocessor = new Preprocessor();
 		preprocessor.run();
-	}
-	
-	/** Query clusterer */
-	private static void runClusterer() {
-		clusterer = new QChtc();
-		// stub method
 	}
 	
 	/** Sample - Takes large files and outputs the first n lines to another file */
@@ -93,8 +84,8 @@ public class Main {
 				//new YagoWikipediaInfoProcessor(mongoWriter, "output/sampler-out/yagoWikipediaInfo.tsv", "tsv")
 				
 				// Hierarchy operations --
-				new YagoSimpleTaxonomyProcessor(	hierarchy, "input/yago/tsv/yagoSimpleTaxonomy.tsv", "tsv"),
-				new YagoTaxonomyProcessor(			hierarchy, "input/yago/tsv/yagoTaxonomy.tsv", "tsv"),
+				// new YagoSimpleTaxonomyProcessor(	hierarchy, "input/yago/tsv/yagoSimpleTaxonomy.tsv", "tsv"),
+				// new YagoTaxonomyProcessor(			hierarchy, "input/yago/tsv/yagoTaxonomy.tsv", "tsv"),
 				
 				
 		});
