@@ -76,7 +76,8 @@ public class QueryMapper {
 	
 	public void map() {
 		
-		//HashMap<String, >
+		
+		
 		SearchSessionSerial[] sessions = this.readFile();
 		
 		for(SearchSessionSerial session : sessions) {
@@ -88,7 +89,6 @@ public class QueryMapper {
 			
 			
 		}
-		System.out.println(sessions.length);
 	}
 	
 }
