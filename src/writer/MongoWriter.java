@@ -42,7 +42,9 @@ public class MongoWriter {
 			this.classes = db.getCollection("classes");
 			this.searchMaps = db.getCollection("searchMaps");
 			
-			this.entities.ensureIndex(new BasicDBObject("name", 1).append("cleanName", 1).append("searchString", 1));
+			this.entities.ensureIndex(new BasicDBObject("name", 1));
+			this.entities.ensureIndex(new BasicDBObject("cleanName", 1));
+			this.entities.ensureIndex(new BasicDBObject("searchString", 1));
 			this.searchMaps.ensureIndex(new BasicDBObject("name", 1));
 			
 		} catch (UnknownHostException e) {
@@ -151,8 +153,6 @@ public class MongoWriter {
 		// exec
 		this.searchMaps.update(selector, setOnInsertOperator, true, false);
 		this.searchMaps.update(selector, addToSetOperator, false, false);
-		
-		System.out.println("MongoWriter: searchMap updated");
 		
 	}
 	

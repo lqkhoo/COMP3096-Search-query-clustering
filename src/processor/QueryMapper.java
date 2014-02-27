@@ -196,11 +196,11 @@ public class QueryMapper {
 				
 				this.updateCount++;
 				
-				if(this.updateCount % 100 == 0) {
+				if(this.updateCount % 50000 == 0) {
 					this.currentTime = System.currentTimeMillis();
 					int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
 					this.prevTime = this.currentTime;
-					System.out.println("QueryMapper: " + this.updateCount + " sessions processed (" + seconds + "s)");
+					System.out.println("QueryMapper: " + this.updateCount / 1000 + "k sessions processed (" + seconds + "s)");
 				}
 				
 			}
