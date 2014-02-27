@@ -59,6 +59,8 @@ public class PreprocessedLogReader {
 				line = this.bufferedReader.readLine();
 			}
 			
+			System.out.println("ProcessedLogReader: Finished reading in file " + logFile.getName());
+			
 		} catch(FileNotFoundException e) {
 			System.out.println("PreprocessedLogReader: FileNotFoundException");
 		} catch (IOException e) {

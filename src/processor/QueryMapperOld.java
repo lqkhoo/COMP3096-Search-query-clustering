@@ -13,7 +13,6 @@ import com.mongodb.DBObject;
 
 import reader.PreprocessedLogReader;
 
-import lib.Stemmer;
 import model.SearchSessionSerial;
 
 import writer.MongoWriter;
@@ -22,7 +21,7 @@ import writer.MongoWriter;
  * Writes query string mappings to the MongoDB collection called queryMap
  * @author Li Quan Khoo
  */
-public class QueryMapper {
+public class QueryMapperOld {
 	
 	public static final String DEFAULT_STOPWORDS_INPUT_FILE_PATH = "src/config/stopwords.ini";
 	
@@ -30,16 +29,11 @@ public class QueryMapper {
 	private HashMap<String, String> stopwords;
 	private MongoWriter mongoWriter;
 	
-	private Stemmer stemmer;
 	
-	private HashMap<String, String> matchResultsCache; // This is never refreshed
+	private HashMap<String, String[]> matchResultsCache; // This is never refreshed
 	private HashMap<String, String> noMatchCache; // This is refreshed every file to not overuse memory
 	
-	private long prevTime = System.currentTimeMillis();
-	private long currentTime;
-	private int updateCount = 0;
-	
-	public QueryMapper(MongoWriter mongoWriter) {
+	public QueryMapperOld(MongoWriter mongoWriter) {
 		this.logReader = new PreprocessedLogReader();
 		this.mongoWriter = mongoWriter;
 		initStopwords();
@@ -70,14 +64,10 @@ public class QueryMapper {
 	}
 	
 	private String[] generateQuerySubstrings(String query) {
-		
-		// Maximum length of string in terms of substrings to search for in entity space.
-		final int CULL_LENGTH = 3;
-		
 		ArrayList<String> substrings = new ArrayList<String>();
 		String[] parts = query.split(" ");
 		String substring;
-		boolean containsStopword = false;
+		
 		// degenerate
 		if(query.equals("") || query == null) {
 			return new String[] {};
@@ -90,19 +80,9 @@ public class QueryMapper {
 		//
 		
 		for(int j = parts.length - 1; j >= 0; j--) {
-			
-			if(j > CULL_LENGTH) {
-				continue;
-			}
-			
 			for(int i = 0; i + j < parts.length; i++) {
 				substring = "";
 				for(int k = i; k <= i + j; k++) {
-					containsStopword = false;
-					if(this.stopwords.containsKey(parts[k])) {
-						containsStopword = true;
-						break;
-					}
 					if(substring.equals("")) {
 						substring += parts[k];
 					} else {
@@ -111,7 +91,7 @@ public class QueryMapper {
 				}
 				
 				// ignore stopwords, otherwise add to list
-				if(! containsStopword) {
+				if(! this.stopwords.containsKey(substring)) {
 					substrings.add(substring);
 				}
 			}
@@ -121,52 +101,59 @@ public class QueryMapper {
 		
 	}
 	
-	private boolean getIsEntitySearchString(String queryString) {
+	private String[] getMatchingEntityNames(String queryString) {
 		
 		// Cache hit
 		if(this.matchResultsCache.containsKey(queryString)) {
-			return true;
+			return this.matchResultsCache.get(queryString);
 		} else {
 			if(this.noMatchCache.containsKey(queryString)) {
-				return false;
+				return new String[]{};
 			}
 		}
 		
 		// Cache miss - db lookup
-		DBObject entity = this.mongoWriter.getOneEntity(new BasicDBObject("searchString", queryString));
+		ArrayList<DBObject> entities = this.mongoWriter.getEntities(new BasicDBObject("searchString", queryString));
 		
 		// Cache results and return
-		if(entity != null) {
-			this.matchResultsCache.put(queryString, "");
-			return true;
-
+		ArrayList<String> entityNames;
+		String[] entityNamesArray;
+		if(entities.size() != 0) {
+			entityNames = new ArrayList<String>();
+			for(int i = 0; i < entities.size(); i++) {
+				entityNames.add((String) entities.get(i).get("name"));
+			}
+			entityNamesArray = entityNames.toArray(new String[]{});
+			this.matchResultsCache.put(queryString, entityNamesArray);
+			return entityNamesArray;
 		} else {
 			this.noMatchCache.put(queryString, "");
-			return false;
+			return new String[]{};
 		}
 	}
 	
-	private void map(HashMap<String, Boolean> searchStringsHash, int sessionId) {
+	private void map(HashMap<String, Boolean> entityNamesHash, int sessionId) {
 		
-		String[] searchStrings = searchStringsHash.keySet().toArray(new String[]{});
-		for(String searchString : searchStrings) {
-			mongoWriter.addOrUpdateSearchMap(searchString, searchStrings, searchStringsHash, sessionId);
+		String[] entityNames = entityNamesHash.keySet().toArray(new String[]{});
+		for(String entityName : entityNames) {
+			System.out.println(entityName);
+			// mongoWriter.addOrUpdateEntityMap(entityName, entityNames, entityNamesHash, sessionId);
 		}
 	}
 		
 	public void run() {
 		
-		this.matchResultsCache = new HashMap<String, String>();
+		this.matchResultsCache = new HashMap<String, String[]>();
 		
 		SearchSessionSerial[] sessions = this.logReader.getLogs();
 		int sessionId;
 		String[] substrings;	// substrings formed from whole query string
-		HashMap<String, Boolean> searchStringsHash;
+		String[] entityNames;	// names of entities matching query string
+		boolean isFullMatch;	// Whether the match is to the whole query string or to one of its substrings
+		HashMap<String, Boolean> entityNamesHash;
 		
 		// for each file (100k sessions, ~ 20mb each on default settings)
 		while(sessions != null) {
-			
-			System.out.println("QueryMapper: Processing sessions...");
 			
 			// Reset no-match cache after every file
 			this.noMatchCache = new HashMap<String, String>();
@@ -175,7 +162,7 @@ public class QueryMapper {
 			for(SearchSessionSerial session : sessions) {
 				
 				sessionId = session.getSessionId();
-				searchStringsHash = new HashMap<String, Boolean>();
+				entityNamesHash = new HashMap<String, Boolean>();
 				
 				// for each query in session
 				for(String query : session.getQueries()) {
@@ -186,22 +173,18 @@ public class QueryMapper {
 					
 					// for each query substring
 					for(int i = 0; i < substrings.length; i++) {
-						if(getIsEntitySearchString(substrings[i]) && ! searchStringsHash.containsKey(substrings[i])) {
-							searchStringsHash.put(substrings[i], false);
+						isFullMatch = (i == 0) ? true : false;
+						entityNames = getMatchingEntityNames(substrings[i]);
+						for(String name : entityNames) {
+							if(! entityNamesHash.containsKey(name)) {
+								entityNamesHash.put(name, isFullMatch);
+							}
 						}
 					}
 				}
 				
-				map(searchStringsHash, sessionId);
-				
-				this.updateCount++;
-				
-				if(this.updateCount % 100 == 0) {
-					this.currentTime = System.currentTimeMillis();
-					int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
-					this.prevTime = this.currentTime;
-					System.out.println("QueryMapper: " + this.updateCount + " sessions processed (" + seconds + "s)");
-				}
+				// Once we have all the entity names, construct an n x n strongly connected graph
+				map(entityNamesHash, sessionId);
 				
 			}
 			sessions = this.logReader.getLogs();

@@ -38,7 +38,7 @@ public class SearchSessionSerial extends ASearchSession {
 	
 	@Override
 	public String[] getQueries() {
-		return (String[]) this.queries.toArray();
+		return this.queries.toArray(new String[]{});
 	}
 	
 }

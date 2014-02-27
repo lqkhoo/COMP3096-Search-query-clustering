@@ -45,14 +45,19 @@ public class YagoLabelsProcessor extends AYagoProcessor {
 				relation = lineMatcher.group(4);
 				relationTarget = lineMatcher.group(5);
 				
+				
+				// Currently is NO-OP. Ascertain whether output is correct before running this
+				
 				/*
 				System.out.println(name);
 				System.out.println(relation);
 				System.out.println(relationTarget);
 				*/
-				if(mongoWriter.getEntity(new BasicDBObject("name", name)).isEmpty()) {
+				/*
+				if(mongoWriter.getEntities(new BasicDBObject("name", name)).isEmpty()) {
 					System.out.println(name);
 				}
+				*/
 				
 				/*
 				mongoWriter.addOrUpdateEntity(name, relation, relationTarget);

@@ -3,6 +3,7 @@ package writer;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +26,7 @@ public class MongoWriter {
 	private DB db;
 	private DBCollection entities;
 	private DBCollection classes;
-	private DBCollection entityMappings;
+	private DBCollection searchMaps;
 	
 	private long updateCount = 0;
 	private long prevTime = System.currentTimeMillis();
@@ -39,10 +40,10 @@ public class MongoWriter {
 			
 			this.entities = db.getCollection("entities");
 			this.classes = db.getCollection("classes");
-			this.entityMappings = db.getCollection("entityMappings");
+			this.searchMaps = db.getCollection("searchMaps");
 			
 			this.entities.ensureIndex(new BasicDBObject("name", 1).append("cleanName", 1).append("searchString", 1));
-			this.entityMappings.ensureIndex(new BasicDBObject("name", 1));
+			this.searchMaps.ensureIndex(new BasicDBObject("name", 1));
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -119,15 +120,106 @@ public class MongoWriter {
 		}
 	}
 	
-	public DBCollection getEntities() {
+	public void addOrUpdateSearchMap(String searchString, String[] searchStrings, HashMap<String, Boolean> searchStringsHash, int sessionId) {
+		
+		BasicDBObject selector = new BasicDBObject("name", searchString);
+		BasicDBObject setOnInsertOperator = new BasicDBObject();
+		BasicDBObject addToSetOperator = new BasicDBObject();
+		
+		// initial set
+		BasicDBObject mappings = new BasicDBObject();
+		
+		BasicDBObject setOnInsertFields = new BasicDBObject();
+		setOnInsertFields.put("name", searchString);
+		setOnInsertFields.put("mappings", mappings);
+		
+		// add to set on update
+		BasicDBObject addToSetFields = new BasicDBObject();
+		
+		for(String entityName : searchStrings) {
+			if(entityName.equals(searchString)) {
+				continue;
+			} else {
+				addToSetFields.put("mappings." + entityName, sessionId);
+			}
+		}
+		
+		// finalize operator
+		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
+		addToSetOperator.put("$addToSet", addToSetFields);
+		
+		// exec
+		this.searchMaps.update(selector, setOnInsertOperator, true, false);
+		this.searchMaps.update(selector, addToSetOperator, false, false);
+		
+		System.out.println("MongoWriter: searchMap updated");
+		
+	}
+	
+	/*
+	 
+	// for QueryMapperOld
+	public void addOrUpdateSearchMap(String name, String[] entityNames, HashMap<String, Boolean> entityNamesHash, int sessionId) {
+				
+		BasicDBObject selector = new BasicDBObject("name", name);
+		BasicDBObject setOnInsertOperator = new BasicDBObject();
+		BasicDBObject addToSetOperator = new BasicDBObject();
+		
+		// initial set
+		BasicDBObject mappings = new BasicDBObject();
+		mappings.put("complete", new BasicDBObject());
+		mappings.put("partial", new BasicDBObject());
+		
+		BasicDBObject setOnInsertFields = new BasicDBObject();
+		setOnInsertFields.put("name", name);
+		setOnInsertFields.put("mappings", mappings);
+		
+		// add to set on update
+		BasicDBObject addToSetFields = new BasicDBObject();
+		
+		for(String entityName : entityNames) {
+			String matchField;
+			if(entityName.equals(name)) {
+				continue;
+			} else {
+				matchField = (entityNamesHash.get(name) == true) ? "complete" : "partial";
+				addToSetFields.put("mappings." + matchField + "." + entityName, sessionId);
+			}
+		}
+		
+		// finalize operator
+		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
+		addToSetOperator.put("$addToSet", addToSetFields);
+		
+		// exec
+		this.searchMaps.update(selector, setOnInsertOperator, true, false);
+		this.searchMaps.update(selector, addToSetOperator, false, false);
+		
+		incrementUpdateCountAndReport();
+	}
+	*/
+	
+	public DBCollection getEntitiesCollection() {
 		return this.entities;
 	}
 	
-	public DBCollection getClasses() {
+	public DBCollection getClassesCollection() {
 		return this.classes;
 	}
 	
-	public ArrayList<DBObject> getEntity(BasicDBObject criteria) {
+	public DBCollection getEntityMappingsCollection() {
+		return this.searchMaps;
+	}
+	
+	public DBObject getOneEntity(BasicDBObject criteria) {
+		return this.entities.findOne(criteria);
+	}
+	
+	public DBObject getUniqueEntity(String entityName) {
+		return this.entities.findOne(new BasicDBObject("name", entityName));
+	}
+	
+	public ArrayList<DBObject> getEntities(BasicDBObject criteria) {
 		ArrayList<DBObject> items = new ArrayList<DBObject>();
 		DBCursor cursor = this.entities.find(criteria);
 		try {
@@ -148,20 +240,20 @@ public class MongoWriter {
 		db.dropDatabase();
 	}
 	
-	public void dropEntities() {
+	public void dropEntitiesCollection() {
 		this.entities.drop();
 	}
 	
-	public void dropClasses() {
+	public void dropClassesCollection() {
 		this.classes.drop();
 	}
 	
-	public long getEntityCount() {
+	public long getEntitiesCollectionCount() {
 		return this.entities.getCount();
 	}
 	
-	public long getClassCount() {
+	public long getClassesCollectionCount() {
 		return this.classes.getCount();
 	}
-	
+		
 }

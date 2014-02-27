@@ -94,8 +94,9 @@ public class Main {
 	}
 	
 	private static void mapQueries() {
-		queryMapper = new QueryMapper();
-		queryMapper.map();
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		queryMapper = new QueryMapper(mongoWriter);
+		queryMapper.run();
 	}
 	
 	// Removes entities with just cleanName and null name fields which I have no idea how they got into the database
@@ -181,9 +182,9 @@ public class Main {
 		String name;
 		String cleanName;
 		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2test");
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
 		
-		entities = mongoWriter.getEntities();
+		entities = mongoWriter.getEntitiesCollection();
 		cursor = entities.find(new BasicDBObject());
 		
 		System.out.println(entities.count());
@@ -198,6 +199,35 @@ public class Main {
 			mongoWriter.close();
 		}
 
+	}
+	
+	private static void printEntityMappings() {
+		
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		DBCollection collection;
+		DBCursor cursor;
+		DBObject entityMap;
+		
+		String name;
+		String cleanName;
+		
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		
+		
+		collection = mongoWriter.getEntityMappingsCollection();
+		cursor = collection.find(new BasicDBObject());
+		
+		System.out.println(collection.count());
+		
+		try {
+			while(cursor.hasNext()) {
+				entityMap = cursor.next();
+				System.out.println(gson.toJson(entityMap));
+			}
+		} finally {
+			mongoWriter.close();
+		}
 	}
 	
 	private static void mongoDBQueryPerformanceTest() {
@@ -230,7 +260,7 @@ public class Main {
 		};
 		
 		for(String entity : entities) {
-			System.out.println(gson.toJson(mongoWriter.getEntity(new BasicDBObject("cleanName", entity))));
+			System.out.println(gson.toJson(mongoWriter.getEntities(new BasicDBObject("cleanName", entity))));
 		}
 		
 		// classes
@@ -245,15 +275,16 @@ public class Main {
 	/** */
 	public static void main(String[] args) {
 		
-		preprocessQueryLogs();
+		// preprocessQueryLogs();
 		// sampleFiles("input/yago/tsv");
 		
 		// getYagoEntities();
 		// getYagoHierarchy();
-		// mapQueries();
+		mapQueries();
 		
 		// mongoDBQueryPerformanceTest();
 		// printEntities();
+		// printEntityMappings();
 		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
 

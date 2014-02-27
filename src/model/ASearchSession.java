@@ -17,5 +17,7 @@ public abstract class ASearchSession {
 	public Date getSessionEnd() { return this.end; }
 	public void setSessionEnd(Date sessionEnd) { this.end = sessionEnd; }
 	public int getUserId() { return this.userId; }
+	public int getSessionId() { return this.sessionId; }
+	public void setSessionId(int sessionId) { this.sessionId = sessionId; }
 	
 }
