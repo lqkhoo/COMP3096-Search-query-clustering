@@ -1,6 +1,5 @@
 package processor.freebase;
 
-/*
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
@@ -13,9 +12,9 @@ import java.util.Properties;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-*/
+
 public class FreebaseProcessor {
-	/*
+
 	public static Properties properties = new Properties();
 
 	public static void fetch(String query) {
@@ -43,9 +42,8 @@ public class FreebaseProcessor {
 			ex.printStackTrace();
 		}
 	}
-	*/
+
 	
-	/*
 	public static void fetch(String query){
 		try {
 		freebase.research.query(query);
@@ -54,7 +52,6 @@ public class FreebaseProcessor {
 			ex.printStackTrace();
 		}
 	}
-	*/
 	
 	
 }

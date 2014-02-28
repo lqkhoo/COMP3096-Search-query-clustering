@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import lib.Stemmer;
+import libs.Stemmer;
 
 /**
  * Class implementing stopwords removal.

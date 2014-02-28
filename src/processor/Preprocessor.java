@@ -1,14 +1,10 @@
 package processor;
 import java.util.ArrayList;
 
-import reader.AolLogReader;
-import writer.BatchFileWriter;
-
 import model.LogObject;
 import model.SearchSession;
-
-
-
+import reader.AolLogReader;
+import writer.BatchFileWriter;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 /**
