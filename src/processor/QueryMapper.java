@@ -32,8 +32,8 @@ public class QueryMapper {
 	
 	private Stemmer stemmer;
 	
-	private HashMap<String, String> matchResultsCache; // This is never refreshed
-	private HashMap<String, String> noMatchCache; // This is refreshed every file to not overuse memory
+	private HashMap<String, String> matchResultsCache;
+	private HashMap<String, String> noMatchCache;
 	
 	private long prevTime = System.currentTimeMillis();
 	private long currentTime;
@@ -70,14 +70,11 @@ public class QueryMapper {
 	}
 	
 	private String[] generateQuerySubstrings(String query) {
-		
-		// Maximum length of string in terms of substrings to search for in entity space.
-		final int CULL_LENGTH = 3;
-		
+				
 		ArrayList<String> substrings = new ArrayList<String>();
 		String[] parts = query.split(" ");
 		String substring;
-		boolean containsStopword = false;
+		
 		// degenerate
 		if(query.equals("") || query == null) {
 			return new String[] {};
@@ -91,29 +88,16 @@ public class QueryMapper {
 		
 		for(int j = parts.length - 1; j >= 0; j--) {
 			
-			if(j > CULL_LENGTH) {
-				continue;
-			}
-			
 			for(int i = 0; i + j < parts.length; i++) {
 				substring = "";
 				for(int k = i; k <= i + j; k++) {
-					containsStopword = false;
-					if(this.stopwords.containsKey(parts[k])) {
-						containsStopword = true;
-						break;
-					}
 					if(substring.equals("")) {
 						substring += parts[k];
 					} else {
 						substring += " " + parts[k];
 					}
 				}
-				
-				// ignore stopwords, otherwise add to list
-				if(! containsStopword) {
-					substrings.add(substring);
-				}
+				substrings.add(substring);
 			}
 		}
 		
@@ -121,29 +105,58 @@ public class QueryMapper {
 		
 	}
 	
-	private boolean getIsEntitySearchString(String queryString) {
+	private String stemQueryString(String queryString) {
+		String output = "";
+		char[] charArray;
 		
-		// Cache hit
-		if(this.matchResultsCache.containsKey(queryString)) {
-			return true;
-		} else {
-			if(this.noMatchCache.containsKey(queryString)) {
-				return false;
+		String[] tokens = queryString.split(" ");
+		for(String token : tokens) {
+			if(! this.stopwords.containsKey(token)) {
+				
+				this.stemmer = new Stemmer();
+				charArray = token.toCharArray();
+				this.stemmer.add(charArray, charArray.length);
+				this.stemmer.stem();
+				if(output.equals("")) {
+					output += this.stemmer.toString();
+				} else {
+					output += " " + this.stemmer.toString();
+				}
 			}
 		}
-		
-		// Cache miss - db lookup
+		return output;
+	}
+	
+	private String lookupEntitySearchStringAndCache(String queryString) {
 		DBObject entity = this.mongoWriter.getOneEntity(new BasicDBObject("searchString", queryString));
 		
 		// Cache results and return
 		if(entity != null) {
 			this.matchResultsCache.put(queryString, "");
-			return true;
+			return queryString;
 
 		} else {
 			this.noMatchCache.put(queryString, "");
-			return false;
+			return null;
 		}
+	}
+	
+	private String getEntitySearchString(String queryString) {
+		
+		// Cache hit
+		if(this.matchResultsCache.containsKey(queryString)) {
+			return queryString;
+		} else {
+			if(this.noMatchCache.containsKey(queryString)) {
+				String stemmedQueryString = stemQueryString(queryString);
+				return lookupEntitySearchStringAndCache(stemmedQueryString);
+			}
+			
+			return lookupEntitySearchStringAndCache(queryString);
+		}
+		
+		// Cache miss - db lookup
+
 	}
 	
 	private void map(HashMap<String, Boolean> searchStringsHash, int sessionId) {
@@ -155,12 +168,11 @@ public class QueryMapper {
 	}
 		
 	public void run() {
-		
-		this.matchResultsCache = new HashMap<String, String>();
-		
+				
 		SearchSessionSerial[] sessions = this.logReader.getLogs();
 		int sessionId;
 		String[] substrings;	// substrings formed from whole query string
+		String searchString;
 		HashMap<String, Boolean> searchStringsHash;
 		
 		// for each file (100k sessions, ~ 20mb each on default settings)
@@ -168,7 +180,8 @@ public class QueryMapper {
 			
 			System.out.println("QueryMapper: Processing sessions...");
 			
-			// Reset no-match cache after every file
+			// Reset cache after every file
+			this.matchResultsCache = new HashMap<String, String>();
 			this.noMatchCache = new HashMap<String, String>();
 			
 			// for each session in file
@@ -180,14 +193,13 @@ public class QueryMapper {
 				// for each query in session
 				for(String query : session.getQueries()) {
 					
-					if(query.contains(".")) { continue; } // If it has a dot it's most likely a URL - save on processing time and just ignore it
-					
 					substrings = generateQuerySubstrings(query);
 					
 					// for each query substring
 					for(int i = 0; i < substrings.length; i++) {
-						if(getIsEntitySearchString(substrings[i]) && ! searchStringsHash.containsKey(substrings[i])) {
-							searchStringsHash.put(substrings[i], false);
+						searchString = getEntitySearchString(substrings[i]);
+						if(searchString != null && ! searchStringsHash.containsKey(searchString)) {
+							searchStringsHash.put(searchString, false);
 						}
 					}
 				}
@@ -196,7 +208,7 @@ public class QueryMapper {
 				
 				this.updateCount++;
 				
-				if(this.updateCount % 50000 == 0) {
+				if(this.updateCount % 10000 == 0) {
 					this.currentTime = System.currentTimeMillis();
 					int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
 					this.prevTime = this.currentTime;

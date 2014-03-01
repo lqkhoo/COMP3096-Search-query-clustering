@@ -45,7 +45,7 @@ public class MongoWriter {
 			this.entities.ensureIndex(new BasicDBObject("name", 1));
 			this.entities.ensureIndex(new BasicDBObject("cleanName", 1));
 			this.entities.ensureIndex(new BasicDBObject("searchString", 1));
-			this.searchMaps.ensureIndex(new BasicDBObject("name", 1));
+			this.searchMaps.ensureIndex(new BasicDBObject("searchString", 1));
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -124,7 +124,7 @@ public class MongoWriter {
 	
 	public void addOrUpdateSearchMap(String searchString, String[] searchStrings, HashMap<String, Boolean> searchStringsHash, int sessionId) {
 		
-		BasicDBObject selector = new BasicDBObject("name", searchString);
+		BasicDBObject selector = new BasicDBObject("searchString", searchString);
 		BasicDBObject setOnInsertOperator = new BasicDBObject();
 		BasicDBObject addToSetOperator = new BasicDBObject();
 		
@@ -132,18 +132,24 @@ public class MongoWriter {
 		BasicDBObject mappings = new BasicDBObject();
 		
 		BasicDBObject setOnInsertFields = new BasicDBObject();
-		setOnInsertFields.put("name", searchString);
+		setOnInsertFields.put("searchString", searchString);
 		setOnInsertFields.put("mappings", mappings);
 		
 		// add to set on update
 		BasicDBObject addToSetFields = new BasicDBObject();
 		
 		for(String entityName : searchStrings) {
+			
+			// let entity map to self, as sessionId won't be registered for single-entity sessions otherwise
+			
+			/*
 			if(entityName.equals(searchString)) {
 				continue;
 			} else {
 				addToSetFields.put("mappings." + entityName, sessionId);
 			}
+			*/
+			addToSetFields.put("mappings." + entityName, sessionId);
 		}
 		
 		// finalize operator

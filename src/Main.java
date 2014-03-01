@@ -23,6 +23,7 @@ import com.mongodb.DBObject;
 import com.mongodb.Mongo;
 
 import reader.BigFileSampler;
+import reader.PreprocessedLogReader;
 import writer.MongoWriter;
 
 public class Main {
@@ -201,16 +202,36 @@ public class Main {
 
 	}
 	
-	private static void printEntityMappings() {
-		
+	private static void printSearchMap(String searchString) {
 		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		
 		DBCollection collection;
 		DBCursor cursor;
 		DBObject entityMap;
 		
-		String name;
-		String cleanName;
+		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		
+		
+		collection = mongoWriter.getEntityMappingsCollection();
+		cursor = collection.find(new BasicDBObject("searchString", searchString));
+		
+		try {
+			while(cursor.hasNext()) {
+				entityMap = cursor.next();
+				System.out.println(gson.toJson(entityMap));
+			}
+		} finally {
+			mongoWriter.close();
+		}
+	}
+	
+	private static void printSearchMaps() {
+		
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		DBCollection collection;
+		DBCursor cursor;
+		DBObject entityMap;
 		
 		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
 		
@@ -270,7 +291,6 @@ public class Main {
 		System.out.println("Main: MongoDB performance test: " + timeTaken + " seconds, queried " + entities.length + " entities, " + classes.length + " classes.");
 		mongoWriter.close();
 	}
-
 	
 	/** */
 	public static void main(String[] args) {
@@ -280,11 +300,12 @@ public class Main {
 		
 		// getYagoEntities();
 		// getYagoHierarchy();
-		mapQueries();
+		// mapQueries();
 		
-		// mongoDBQueryPerformanceTest();
+		mongoDBQueryPerformanceTest();
 		// printEntities();
-		// printEntityMappings();
+		//printSearchMaps();
+		// printSearchMap("indonesia");
 		
 		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
 

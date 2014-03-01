@@ -60,6 +60,7 @@ public class PreprocessedLogReader {
 			}
 			
 			System.out.println("ProcessedLogReader: Finished reading in file " + logFile.getName());
+			this.currentFileIndex++;
 			
 		} catch(FileNotFoundException e) {
 			System.out.println("PreprocessedLogReader: FileNotFoundException");
