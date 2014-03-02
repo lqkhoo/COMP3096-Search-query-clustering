@@ -33,19 +33,27 @@ public abstract class AYagoProcessor {
 	
 	public final void process() throws UnsupportedOperationException {
 		if(this.inputFileType.equals(TSV)) {
-			processTsv();
+			processEntitiesTsv();
 		} else if (this.inputFileType.equals(TTL)) {
-			processTtl();
+			processEntitiesTtl();
 		} else {
 			throw new UnsupportedOperationException("AYagoProcessor: File type " + this.inputFileType + " not supported.");
 		}
 	}
 	
-	public void processTsv() throws UnsupportedOperationException {
+	public void processEntitiesTsv() throws UnsupportedOperationException {
 		throw new UnsupportedOperationException();
 	}
 	
-	public void processTtl() throws UnsupportedOperationException {
+	public void processEntitiesTtl() throws UnsupportedOperationException {
+		throw new UnsupportedOperationException();
+	}
+	
+	public void processClassesTsv() throws UnsupportedOperationException {
+		throw new UnsupportedOperationException();
+	}
+	
+	public void processClassesTtl() throws UnsupportedOperationException {
 		throw new UnsupportedOperationException();
 	}
 	

@@ -12,7 +12,7 @@ public class YagoWordnetDomainsProcessor extends AYagoProcessor {
 	}
 	
 	@Override
-	public void processTsv() throws UnsupportedOperationException {
+	public void processEntitiesTsv() throws UnsupportedOperationException {
 		String line;
 		line = this.yagoReader.readNextLine_Tsv();
 		

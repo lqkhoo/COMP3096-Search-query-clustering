@@ -2,7 +2,7 @@ package model;
 
 import java.util.ArrayList;
 
-public class YagoCategoryNode {
+public class YagoClassNode {
 	
 	private String name;
 	private String cleanName;
@@ -10,7 +10,7 @@ public class YagoCategoryNode {
 	private ArrayList<String> superclasses;
 	private ArrayList<String> subclasses;
 	
-	public YagoCategoryNode(String name) {
+	public YagoClassNode(String name) {
 		this.name = name;
 		this.cleanName = null;
 		this.categoryType = null;
@@ -42,6 +42,10 @@ public class YagoCategoryNode {
 	public String addSubclass(String subclassName) {
 		this.subclasses.add(subclassName);
 		return subclassName;
-	}	
+	}
+	
+	public ArrayList<String> getSubclassNames() {
+		return this.subclasses;
+	}
 	
 }

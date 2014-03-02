@@ -1,4 +1,5 @@
 import model.YagoHierarchy;
+import processor.EntityClusterer;
 import processor.Preprocessor;
 import processor.QueryMapper;
 import processor.YagoProcessor;
@@ -28,35 +29,53 @@ import writer.MongoWriter;
 
 public class Main {
 	
-	private static Preprocessor preprocessor;
-	private static BigFileSampler sampler;
-	private static YagoProcessor yagoProcessor;
-	private static MongoWriter mongoWriter;
-	private static QueryMapper queryMapper;
+	public static final String MONGODB_HOST = "localhost";
+	public static final int MONGODB_PORT = 27017;
+	public static final String MONGODB_DBNAME = "yago2";
 	
-	/** Preprocessor - Take logs and output segmented JSON search session objects */
+	
+	// Helper classes
+	private static MongoWriter newMongoWriter() {
+		MongoWriter mongoWriter = new MongoWriter(MONGODB_HOST, MONGODB_PORT, MONGODB_DBNAME);
+		return mongoWriter;
+	}
+	
+	// Operator classes
+	
+	/**
+	 * Preprocessor - Reads in AOL search logs and outputs segmented JSON search session objects.
+	 * Currently output is written to file.
+	 * 
+	 * Expected runtime: several minutes (Core i7 2GHz)
+	 */
 	private static void preprocessQueryLogs() {
-		preprocessor = new Preprocessor();
+		Preprocessor preprocessor = new Preprocessor();
 		preprocessor.run();
 	}
 	
-	/** Sample - Takes large files and outputs the first n lines to another file */
+	/**
+	 * Sample - Takes large files and outputs the first n lines to another file
+	 * This is a utility class to allow easy inspection of file formats of huge files and so on.
+	 */
 	private static void sampleFiles(String inputDir) {
-		sampler = new BigFileSampler(inputDir);
+		BigFileSampler sampler = new BigFileSampler(inputDir);
 		sampler.run();
 	}
 	
+	/**
+	 * This reads in Yago files containing entity information
+	 * and outputs them into the MongoDB collection "entities"
+	 * 
+	 * Expected runtime: Several minutes (Core i7 2GHz)
+	 */
 	private static void getYagoEntities() {
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
-		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
+		MongoWriter mongoWriter = newMongoWriter();
+		YagoProcessor yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
 				
-				// Tests --
-				
+				// -- Tests --
 				//new YagoSimpleTypesProcessor(		mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
 				
-				
-				// Already in database -- 
-				
+				// -- Already in database -- 
 				//new YagoSimpleTypesProcessor(		mongoWriter, "input/yago/tsv/yagoSimpleTypes.tsv", "tsv"),
 				//new YagoImportantTypesProcessor(	mongoWriter, "input/yago/tsv/yagoImportantTypes.tsv", "tsv"),
 				//new YagoTransitiveTypesProcessor(	mongoWriter, "input/yago/tsv/yagoTransitiveType.tsv", "tsv"),
@@ -64,8 +83,7 @@ public class Main {
 				//new YagoWikipediaInfoProcessor(	mongoWriter, "input/yago/tsv/yagoWikipediaInfo.tsv", "tsv")
 				//new YagoWordnetDomainsProcessor(	mongoWriter, "input/yago/tsv/yagoWordnetDomains.tsv", "tsv")
 				
-				// Not run --
-				
+				// -- Not run (output not currently deemed useful / necessary) --
 				//new YagoLabelsProcessor( 			mongoWriter, "input/yago/tsv/yagoLabels.tsv", "tsv")
 				
 		});
@@ -73,107 +91,61 @@ public class Main {
 		mongoWriter.close();
 	}
 	
+	/**
+	 * This reads in Yago files containing class hierarchy information
+	 * and either holds them in a hashmap, writes them to file, or 
+	 * outputs them into the MongoDB collection "classes"
+	 * 
+	 * Runtime: Several seconds to generate hashmap, writing to db takes 1-2 minutes (i7 2GHz)
+	 */
 	private static void getYagoHierarchy() {
-		YagoHierarchy hierarchy = new YagoHierarchy();
-		
-		yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
+		MongoWriter mongoWriter = newMongoWriter();
+		YagoHierarchy hierarchy = new YagoHierarchy(mongoWriter);
+		YagoProcessor yagoProcessor = new YagoProcessor(new AYagoProcessor[] {
 				
-				// Tests --
+				// -- Tests --
 				
-				//new YagoSimpleTypesProcessor(mongoWriter, "output/sampler-out/yagoSimpleTypes.tsv", "tsv"),
-				//new YagoTypesProcessor(mongoWriter, "output/sampler-out/yagoTypes.tsv", "tsv")
-				//new YagoWikipediaInfoProcessor(mongoWriter, "output/sampler-out/yagoWikipediaInfo.tsv", "tsv")
-				
-				// Hierarchy operations --
-				// new YagoSimpleTaxonomyProcessor(	hierarchy, "input/yago/tsv/yagoSimpleTaxonomy.tsv", "tsv"),
-				// new YagoTaxonomyProcessor(			hierarchy, "input/yago/tsv/yagoTaxonomy.tsv", "tsv"),
+				// -- Hierarchy operations --
+				new YagoSimpleTaxonomyProcessor(	hierarchy, "input/yago/tsv/yagoSimpleTaxonomy.tsv", "tsv"),
+				new YagoTaxonomyProcessor(			hierarchy, "input/yago/tsv/yagoTaxonomy.tsv", "tsv"),
 				
 				
 		});
+		
 		yagoProcessor.run();
-		hierarchy.toFile();
+		
+		// Uncomment this line to write to file
+		// hierarchy.toFile();
+		
+		// Uncomment this line to write to MongoDB
+		hierarchy.toDb();
 	}
 	
+	/**
+	 * 
+	 * 
+	 */
+	private static void mapYagoHierarchyToEntities() {
+		MongoWriter mongoWriter = newMongoWriter();
+		EntityClusterer entityClusterer = new EntityClusterer(mongoWriter);
+		YagoSimpleTypesProcessor processor = new YagoSimpleTypesProcessor(mongoWriter, "input/yago/tsv/yagoSimpleTypes.tsv", "tsv");
+		entityClusterer.mapLeaves(processor);
+	}
+	
+	/**
+	 * This reads in the output of the Preprocessor class (time-segmented AOL log files in JSON format)
+	 * and performs an n x n mapping of query string to query string within each session where each query string
+	 *   must have a mapping to the "searchString" attribute of an entity in the "entities" MongoDB collection,
+	 *   and then it writes the information to the "searchMap" collection in MongoDB
+	 *   
+	 * Expected runtime: 24 - 36 hours (Core i7 2GHz)
+	 */
 	private static void mapQueries() {
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
-		queryMapper = new QueryMapper(mongoWriter);
+		MongoWriter mongoWriter = newMongoWriter();
+		QueryMapper queryMapper = new QueryMapper(mongoWriter);
 		queryMapper.run();
 	}
-	
-	// Removes entities with just cleanName and null name fields which I have no idea how they got into the database
-	/*
-	private static void removeNullNamedEntities() {
-		int updateCount = 0;
 		
-		DBCollection entities;
-		DBCursor cursor;
-		DBObject entity;
-		
-		String name;
-		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
-		
-		entities = mongoWriter.getEntities();
-		cursor = entities.find(new BasicDBObject());
-		while(cursor.hasNext()) {
-			entity = cursor.next();
-			name = (String) entity.get("name");
-			if(name == null) {
-				entities.remove(entity);
-				updateCount++;
-				if(updateCount % 1000 == 0) {
-					System.out.println("Removed " + updateCount / 1000 + "k entities.");
-				}
-			}
-			
-		}
-		System.out.println("Update operation complete");
-		
-		mongoWriter.close();
-	}
-	*/
-	
-	// Removes trailing space in about 300k cleanName attributes
-	/*
-	private static void fixEntitiesCleanNameWhitespace() {
-		
-		int updateCount = 0;
-		
-		DBCollection entities;
-		DBCursor cursor;
-		DBObject entity;
-		
-		Pattern pattern = Pattern.compile("(^(.*)[ ]$)");
-		Matcher matcher;
-		
-		String name;
-		String cleanName;
-		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
-		
-		entities = mongoWriter.getEntities();
-		cursor = entities.find(new BasicDBObject());
-		while(cursor.hasNext()) {
-			entity = cursor.next();
-			name = (String) entity.get("name");
-			cleanName = (String) entity.get("cleanName");
-			matcher = pattern.matcher(cleanName);
-			if(matcher.find()) {
-				cleanName = matcher.group(2);
-				entities.update(new BasicDBObject("name", name), new BasicDBObject("cleanName", cleanName), false, false);
-				updateCount++;
-				if(updateCount % 1000 == 0) {
-					System.out.println("Updated " + updateCount / 1000 + "k entities.");
-				}
-			}
-			
-		}
-		System.out.println("Update operation complete");
-		
-		mongoWriter.close();
-	}
-	*/
-	
 	private static void printEntities() {
 		
 		DBCollection entities;
@@ -183,7 +155,7 @@ public class Main {
 		String name;
 		String cleanName;
 		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		MongoWriter mongoWriter = newMongoWriter();
 		
 		entities = mongoWriter.getEntitiesCollection();
 		cursor = entities.find(new BasicDBObject());
@@ -209,7 +181,7 @@ public class Main {
 		DBCursor cursor;
 		DBObject entityMap;
 		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		MongoWriter mongoWriter = newMongoWriter();
 		
 		
 		collection = mongoWriter.getEntityMappingsCollection();
@@ -233,8 +205,7 @@ public class Main {
 		DBCursor cursor;
 		DBObject entityMap;
 		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
-		
+		MongoWriter mongoWriter = newMongoWriter();
 		
 		collection = mongoWriter.getEntityMappingsCollection();
 		cursor = collection.find(new BasicDBObject());
@@ -251,17 +222,60 @@ public class Main {
 		}
 	}
 	
+	private static void printClass(String name) {
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		MongoWriter mongoWriter = newMongoWriter();
+		try {
+			System.out.println(gson.toJson(mongoWriter.getClass(name)));
+		} finally {
+			mongoWriter.close();
+		}
+	}
+	
+	private static void printClasses() {
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		DBCollection classes;
+		DBCursor cursor;
+		DBObject yagoClass;
+		
+		MongoWriter mongoWriter = newMongoWriter();
+		
+		classes = mongoWriter.getClassesCollection();
+		cursor = classes.find(new BasicDBObject());
+		
+		System.out.println(classes.count());
+		
+		try {
+			while(cursor.hasNext()) {
+				yagoClass = cursor.next();
+				System.out.println(gson.toJson(yagoClass));
+			}
+		} finally {
+			mongoWriter.close();
+		}
+	}
+
+	private static void printClassMembers(String name) {
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		MongoWriter mongoWriter = newMongoWriter();
+		try {
+			System.out.println(gson.toJson(mongoWriter.getClassMembers(name)));
+		} finally {
+			mongoWriter.close();
+		}
+	}
+	
 	private static void mongoDBQueryPerformanceTest() {
 		
 		long startTime = System.currentTimeMillis();
 		long endTime;
 		int timeTaken;
-		
+				
 		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-		
-		System.out.println("Main: Running MongoDB query performance test.");
-		
-		mongoWriter = new MongoWriter("localhost", 27017, "yago2");
+		MongoWriter mongoWriter = newMongoWriter();
 		
 		String[] entities = new String[] {
 			"Walter Oi",
@@ -280,6 +294,7 @@ public class Main {
 			
 		};
 		
+		System.out.println("Main: Running MongoDB query performance test.");
 		for(String entity : entities) {
 			System.out.println(gson.toJson(mongoWriter.getEntities(new BasicDBObject("cleanName", entity))));
 		}
@@ -295,19 +310,25 @@ public class Main {
 	/** */
 	public static void main(String[] args) {
 		
+		/* Operator calls */
 		// preprocessQueryLogs();
 		// sampleFiles("input/yago/tsv");
 		
 		// getYagoEntities();
+		
 		// getYagoHierarchy();
+		// mapYagoHierarchyToEntities();
+		
 		// mapQueries();
 		
-		mongoDBQueryPerformanceTest();
-		// printEntities();
-		//printSearchMaps();
-		// printSearchMap("indonesia");
 		
-		// REMEMBER TO DELETE PREVIOUS OUTPUT FILES before running anything below this line!!
+		/* Data inspection methods */
+		// mongoDBQueryPerformanceTest();
+		// printEntities();
+		// printClasses();
+		printClassMembers("<wordnet_bishop_109857200>");
+		// printSearchMaps();
+		// printSearchMap("indonesia");
 
 		
 	}

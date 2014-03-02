@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
+import writer.MongoWriter;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -22,24 +24,26 @@ public class YagoHierarchy {
 	public static final String OUTPUT_PATH = "output/hierarchy-out/";
 	
 	// This is used during building only
-	private HashMap<String, YagoCategoryNode> nodeMap;
+	private HashMap<String, YagoClassNode> nodeMap;
+	private MongoWriter mongoWriter;
 	
-	public YagoHierarchy() {
-		this.nodeMap = new HashMap<String, YagoCategoryNode>();
+	public YagoHierarchy(MongoWriter mongoWriter) {
+		this.nodeMap = new HashMap<String, YagoClassNode>();
+		this.mongoWriter = mongoWriter;
 	}
 	
 	public void addRelation(String subclassName, String superclassName) {
 		
-		YagoCategoryNode subclass;
-		YagoCategoryNode superclass;
+		YagoClassNode subclass;
+		YagoClassNode superclass;
 		
 		subclass = this.nodeMap.get(subclassName);
 		if(subclass == null) {
-			subclass = new YagoCategoryNode(subclassName);
+			subclass = new YagoClassNode(subclassName);
 		}
 		superclass = this.nodeMap.get(superclassName);
 		if(superclass == null) {
-			superclass = new YagoCategoryNode(superclassName);
+			superclass = new YagoClassNode(superclassName);
 		}
 		subclass.addSuperclass(superclassName);
 		superclass.addSubclass(subclassName);
@@ -56,6 +60,7 @@ public class YagoHierarchy {
 		FileWriter fileWriter;
 		BufferedWriter bufferedWriter = null;
 		
+		System.out.println("YagoHierarchy: Writing hierarchy to file");
 		try {
 			dir = new File(OUTPUT_PATH);
 			dir.mkdirs();
@@ -70,6 +75,22 @@ public class YagoHierarchy {
 			try {
 				bufferedWriter.close();
 			} catch (IOException e) {}
+		}
+	}
+	
+	public void toDb() {
+		String[] nodeNames = this.nodeMap.keySet().toArray(new String[]{});
+		String className;
+		String[] superclassNames;
+		String[] subclassNames;
+		
+		System.out.println("YagoHierarchy: Writing hierarchy to MongoDb");
+		for(String nodeName : nodeNames) {
+			YagoClassNode node = this.nodeMap.get(nodeName);
+			className = node.getName();
+			superclassNames = node.getSuperclassNames().toArray(new String[]{});
+			subclassNames = node.getSubclassNames().toArray(new String[]{});
+			this.mongoWriter.setClassHierarchy(className, superclassNames, subclassNames);
 		}
 	}
 	

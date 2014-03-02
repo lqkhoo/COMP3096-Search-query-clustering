@@ -82,8 +82,8 @@ public class QueryMapper {
 		
 		//          0     1     2     3
 		// String [***] [***] [***] [***]
-		//          ^				  ^
-		//          i				  j
+		//          ^                 ^
+		//          i                 j
 		//
 		
 		for(int j = parts.length - 1; j >= 0; j--) {

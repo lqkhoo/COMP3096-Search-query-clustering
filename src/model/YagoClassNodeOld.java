@@ -2,26 +2,27 @@ package model;
 
 import java.util.ArrayList;
 
-public class YagoCategoryNodeOld {
+@Deprecated
+public class YagoClassNodeOld {
 	
 	private String name;
 	private String cleanName;
 	private String categoryType;
 	private String parentName;
-	private transient YagoCategoryNodeOld parent;
+	private transient YagoClassNodeOld parent;
 	private ArrayList<String> ancestorNames;
-	private transient ArrayList<YagoCategoryNodeOld> ancestors;
-	private ArrayList<YagoCategoryNodeOld> children;
+	private transient ArrayList<YagoClassNodeOld> ancestors;
+	private ArrayList<YagoClassNodeOld> children;
 	
-	public YagoCategoryNodeOld(String name) {
+	public YagoClassNodeOld(String name) {
 		this.name = name;
 		this.cleanName = null;
 		this.categoryType = null;
 		this.parentName = null;
 		this.parent = null;
 		this.ancestorNames = new ArrayList<String>();
-		this.ancestors = new ArrayList<YagoCategoryNodeOld>();
-		this.children = new ArrayList<YagoCategoryNodeOld>();
+		this.ancestors = new ArrayList<YagoClassNodeOld>();
+		this.children = new ArrayList<YagoClassNodeOld>();
 	}
 	
 	public String getName() {
@@ -36,7 +37,7 @@ public class YagoCategoryNodeOld {
 		return this.categoryType;
 	}
 	
-	public YagoCategoryNodeOld getParent() {
+	public YagoClassNodeOld getParent() {
 		return this.parent;
 	}
 	
@@ -44,21 +45,21 @@ public class YagoCategoryNodeOld {
 		return this.parentName;
 	}
 	
-	public YagoCategoryNodeOld setParent(YagoCategoryNodeOld parent) {
+	public YagoClassNodeOld setParent(YagoClassNodeOld parent) {
 		this.parent = parent;
 		this.parentName = parent.getName();
 		return parent;
 	}
 	
-	public ArrayList<YagoCategoryNodeOld> getChildren() {
+	public ArrayList<YagoClassNodeOld> getChildren() {
 		return this.children;
 	}
 	
-	public ArrayList<YagoCategoryNodeOld> getAncestors() {
+	public ArrayList<YagoClassNodeOld> getAncestors() {
 		return this.ancestors;
 	}
 	
-	public YagoCategoryNodeOld addAncestor(YagoCategoryNodeOld ancestor) {
+	public YagoClassNodeOld addAncestor(YagoClassNodeOld ancestor) {
 		this.ancestors.add(ancestor);
 		this.ancestorNames.add(ancestor.getName());
 		return ancestor;
@@ -72,19 +73,19 @@ public class YagoCategoryNodeOld {
 		return this.ancestorNames;
 	}
 	
-	public YagoCategoryNodeOld addChild(YagoCategoryNodeOld child) {
+	public YagoClassNodeOld addChild(YagoClassNodeOld child) {
 		this.children.add(child);
 		return child;
 	}
 	
-	public ArrayList<YagoCategoryNodeOld> addChildren(ArrayList<YagoCategoryNodeOld> children) {
-		for(YagoCategoryNodeOld child : children) {
+	public ArrayList<YagoClassNodeOld> addChildren(ArrayList<YagoClassNodeOld> children) {
+		for(YagoClassNodeOld child : children) {
 			this.children.add(child);
 		}
 		return children;
 	}
 	
-	public YagoCategoryNodeOld removeChild(String nodeName) {
+	public YagoClassNodeOld removeChild(String nodeName) {
 		for(int i = 0; i < this.children.size(); i++) {
 			if(this.children.get(i).getName().equals(nodeName)) {
 				return this.children.remove(i);

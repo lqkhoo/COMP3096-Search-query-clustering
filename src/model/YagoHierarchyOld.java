@@ -15,35 +15,36 @@ import com.google.gson.GsonBuilder;
  * 
  * @author Li Quan Khoo
  */
+@Deprecated
 public class YagoHierarchyOld {
 	
 	public static final String OUTPUT_PATH = "output/hierarchy-out/";
 	public static final String ROOT_NODE_NAME = "_ROOT_";
 	
 	// This is used during building only
-	private HashMap<Integer, ArrayList<YagoCategoryNodeOld>> buildMap;
-	private YagoCategoryNodeOld rootNode;
-	private HashMap<String, YagoCategoryNodeOld> nodeMap;
+	private HashMap<Integer, ArrayList<YagoClassNodeOld>> buildMap;
+	private YagoClassNodeOld rootNode;
+	private HashMap<String, YagoClassNodeOld> nodeMap;
 	
 	public YagoHierarchyOld() {
-		this.buildMap = new HashMap<Integer, ArrayList<YagoCategoryNodeOld>>();
-		this.rootNode = new YagoCategoryNodeOld(ROOT_NODE_NAME);
-		this.nodeMap = new HashMap<String, YagoCategoryNodeOld>();
+		this.buildMap = new HashMap<Integer, ArrayList<YagoClassNodeOld>>();
+		this.rootNode = new YagoClassNodeOld(ROOT_NODE_NAME);
+		this.nodeMap = new HashMap<String, YagoClassNodeOld>();
 		this.nodeMap.put(ROOT_NODE_NAME, this.rootNode);
 	}
 	
 	public void addRelation(String childNodeName, String ancestorNodeName) {
 		
-		YagoCategoryNodeOld child;
-		YagoCategoryNodeOld ancestor;
+		YagoClassNodeOld child;
+		YagoClassNodeOld ancestor;
 		
 		child = this.nodeMap.get(childNodeName);
 		if(child == null) {
-			child = new YagoCategoryNodeOld(childNodeName);
+			child = new YagoClassNodeOld(childNodeName);
 		}
 		ancestor = this.nodeMap.get(ancestorNodeName);
 		if(ancestor == null) {
-			ancestor = new YagoCategoryNodeOld(ancestorNodeName);
+			ancestor = new YagoClassNodeOld(ancestorNodeName);
 		}
 		child.addAncestor(ancestor);
 		this.nodeMap.put(childNodeName, child);
@@ -53,8 +54,8 @@ public class YagoHierarchyOld {
 		
 		String[] keys;
 		int	ancestorCount;
-		YagoCategoryNodeOld node;
-		ArrayList<YagoCategoryNodeOld> nodeArray;
+		YagoClassNodeOld node;
+		ArrayList<YagoClassNodeOld> nodeArray;
 		
 		// order nodes by how many ancestors they have. Nodes with more ancestors MUST be at a lower level
 		//   than those with less
@@ -64,16 +65,16 @@ public class YagoHierarchyOld {
 			ancestorCount = node.getNumOfAncestors();
 			nodeArray = this.buildMap.get(ancestorCount);
 			if(nodeArray == null) {
-				nodeArray = new ArrayList<YagoCategoryNodeOld>();
+				nodeArray = new ArrayList<YagoClassNodeOld>();
 				this.buildMap.put(ancestorCount, nodeArray);
 			}
 			nodeArray.add(node);
 		}
 				
 		Integer[] buildKeys;
-		YagoCategoryNodeOld parent;
-		YagoCategoryNodeOld ancestor;
-		ArrayList<YagoCategoryNodeOld> ancestors;
+		YagoClassNodeOld parent;
+		YagoClassNodeOld ancestor;
+		ArrayList<YagoClassNodeOld> ancestors;
 		
 		// Start from 0 and work our way up, establish the immediate parents. Those with 0 are top level classes
 		//   and must be attached to root

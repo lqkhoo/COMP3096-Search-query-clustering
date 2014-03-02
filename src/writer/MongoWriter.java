@@ -2,7 +2,7 @@ package writer;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +16,7 @@ import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 
 /**
- * Class handling connections to a MongoDB instance for YAGO reader output
+ * Class handling connections to a MongoDB instance, and operations on it
  * 
  * @author Li Quan Khoo
  */
@@ -26,6 +26,7 @@ public class MongoWriter {
 	private DB db;
 	private DBCollection entities;
 	private DBCollection classes;
+	private DBCollection classMemberArrays;
 	private DBCollection searchMaps;
 	
 	private long updateCount = 0;
@@ -38,13 +39,25 @@ public class MongoWriter {
 			this.mongoClient = new Mongo(host, port);
 			this.db = mongoClient.getDB(dbName);
 			
+			/* This collection stores Yago2 entities */
 			this.entities = db.getCollection("entities");
+			
+			/* This collection stores Yago2 class hierarchy information and a list of id references to the classMemberArrays collection */
 			this.classes = db.getCollection("classes");
+			
+			/* This collection stores entity class membership information within arrays to work around the 16Mb mongodb document size limit */
+			this.classMemberArrays = db.getCollection("classMemberArrays");
+			
+			/* This collection stores string to string query clusters */
 			this.searchMaps = db.getCollection("searchMaps");
 			
 			this.entities.ensureIndex(new BasicDBObject("name", 1));
 			this.entities.ensureIndex(new BasicDBObject("cleanName", 1));
 			this.entities.ensureIndex(new BasicDBObject("searchString", 1));
+			
+			this.classes.ensureIndex(new BasicDBObject("name", 1));
+			this.classMemberArrays.ensureIndex(new BasicDBObject("id", 1));
+			
 			this.searchMaps.ensureIndex(new BasicDBObject("searchString", 1));
 			
 		} catch (UnknownHostException e) {
@@ -53,10 +66,12 @@ public class MongoWriter {
 		
 	}
 	
+	// close
 	public void close() {
 		mongoClient.close();
 	}
 	
+	// Update methods
 	/**
 	 * Searches for the given name within the entity Mongo collection. If it doesn't exist then create it.
 	 * If it exists then perform a mixin for its key value pairs
@@ -141,7 +156,6 @@ public class MongoWriter {
 		for(String entityName : searchStrings) {
 			
 			// let entity map to self, as sessionId won't be registered for single-entity sessions otherwise
-			
 			/*
 			if(entityName.equals(searchString)) {
 				continue;
@@ -160,6 +174,138 @@ public class MongoWriter {
 		this.searchMaps.update(selector, setOnInsertOperator, true, false);
 		this.searchMaps.update(selector, addToSetOperator, false, false);
 		
+	}
+	
+	/**
+	 * This is the method called by EntityClusterer, as it does not have class information available
+	 * @param className
+	 * @param entityName
+	 */
+	public void setClassMembers(String className, String[] entityNameArray, int entityNameArrayId) {
+		BasicDBObject selector = new BasicDBObject("name", className);
+		BasicDBObject setOnInsertOperator = new BasicDBObject();
+		BasicDBObject addToSetOperator = new BasicDBObject();
+		BasicDBObject setOnInsertFields = new BasicDBObject();
+		BasicDBObject pushFields = new BasicDBObject();
+		
+		setOnInsertFields.put("name", className);
+		setOnInsertFields.put("superclassNames", new BasicDBList());
+		setOnInsertFields.put("subclassNames", new BasicDBList());
+		setOnInsertFields.put("memberArrayIds", new BasicDBList());
+		
+		pushFields.put("memberArrayIds", entityNameArrayId);
+		
+		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
+		addToSetOperator.put("$addToSet", pushFields);
+		
+		this.classes.update(selector, setOnInsertOperator, true, false);
+		this.classes.update(selector, addToSetOperator, false, false);
+		
+		BasicDBObject arraySelector = new BasicDBObject("id", entityNameArrayId);
+		BasicDBObject arraySetOperator = new BasicDBObject();
+		BasicDBObject arraySetFields = new BasicDBObject();
+		
+		arraySetFields.put("id", entityNameArrayId);
+		arraySetFields.put("members", entityNameArray);
+		arraySetOperator.put("$setOnInsert", arraySetFields);
+		
+		this.classMemberArrays.update(arraySelector, arraySetOperator, true, false);
+		
+		this.updateCount++;
+		
+		if(this.updateCount % 10000 == 0) {
+			this.currentTime = System.currentTimeMillis();
+			int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
+			this.prevTime = this.currentTime;
+			System.out.println("MongoWriter: " + this.updateCount / 1000 + "k transactions (" + seconds + "s)");
+		}
+	}
+	
+	/**
+	 * This is the method called by YagoHierarchy if writing to MongoDB, as it does not have entity membership information
+	 * @param className
+	 * @param superclassNames
+	 * @param subclassNames
+	 */
+	public void setClassHierarchy(String className, String[] superclassNames, String[] subclassNames) {
+		
+		BasicDBObject selector = new BasicDBObject("name", className);
+		BasicDBObject setOnInsertOperator = new BasicDBObject();
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setOnInsertFields = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		setOnInsertFields.put("name", className);
+		setOnInsertFields.put("superclassNames", new BasicDBList());
+		setOnInsertFields.put("subclassNames", new BasicDBList());
+		setOnInsertFields.put("memberArrayIds", new BasicDBList());
+		
+		setFields.put("superclassNames", superclassNames);
+		setFields.put("subclassNames", subclassNames);
+		
+		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
+		setOperator.put("$set", setFields);
+		
+		this.classes.update(selector, setOnInsertOperator, true, false);
+		this.classes.update(selector, setOperator, false, false);
+		
+		this.updateCount++;
+		
+		if(this.updateCount % 10000 == 0) {
+			this.currentTime = System.currentTimeMillis();
+			int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
+			this.prevTime = this.currentTime;
+			System.out.println("MongoWriter: " + this.updateCount / 1000 + "k transactions (" + seconds + "s)");
+		}
+	}
+	
+	/**
+	 * Adds or updates a document in the "classes" collection
+	 * This method is very slow compared to the above two, which build all information in RAM and writes in one go
+	 * 
+	 * @param className
+	 * @param superclassNames
+	 * @param subclassNames
+	 * @param memberEntityNames
+	 */
+	@Deprecated
+	public void addOrSetClass(String className, String[] superclassNames, String[] subclassNames, String[] memberEntityNames) {
+		BasicDBObject selector = new BasicDBObject("name", className);
+		BasicDBObject insertionOperator = new BasicDBObject();
+		BasicDBObject addOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		BasicDBObject addFields = new BasicDBObject();
+		
+		setFields.put("name", className);
+		setFields.put("superclassNames", new BasicDBList());
+		setFields.put("subclassNames", new BasicDBList());
+		setFields.put("members", new BasicDBList());
+		
+		if(superclassNames.length != 0) {
+			addFields.put("superclassNames", new BasicDBObject("$each", superclassNames));
+		}
+		if(subclassNames.length != 0) {
+			addFields.put("subclassNames", new BasicDBObject("$each", subclassNames));
+		}
+		
+		if(memberEntityNames.length != 0) {
+			addFields.put("members", new BasicDBObject("$each", memberEntityNames));
+		}
+		
+		insertionOperator.put("$setOnInsert", setFields);
+		addOperator.put("$addToSet", addFields);
+		
+		this.classes.update(selector, insertionOperator, true, false);
+		this.classes.update(selector, addOperator, false, false);
+		
+		this.updateCount++;
+		
+		if(this.updateCount % 10000 == 0) {
+			this.currentTime = System.currentTimeMillis();
+			int seconds = (int) Math.floor((this.currentTime - this.prevTime) / 1000);
+			this.prevTime = this.currentTime;
+			System.out.println("MongoWriter: " + this.updateCount / 1000 + "k transactions (" + seconds + "s)");
+		}
 	}
 	
 	/*
@@ -205,6 +351,7 @@ public class MongoWriter {
 	}
 	*/
 	
+	// Collection methods
 	public DBCollection getEntitiesCollection() {
 		return this.entities;
 	}
@@ -213,10 +360,16 @@ public class MongoWriter {
 		return this.classes;
 	}
 	
+	public DBCollection getClassMemberArraysCollection() {
+		return this.classMemberArrays;
+	}
+	
 	public DBCollection getEntityMappingsCollection() {
 		return this.searchMaps;
 	}
 	
+	
+	// Document methods
 	public DBObject getOneEntity(BasicDBObject criteria) {
 		return this.entities.findOne(criteria);
 	}
@@ -242,6 +395,27 @@ public class MongoWriter {
 		this.entities.remove(new BasicDBObject("cleanName", cleanName));
 	}
 	
+	public DBObject getClass(String className) {
+		return this.getClassesCollection().findOne(new BasicDBObject("name", className));
+	}
+	
+	public String[] getClassMembers(String className) {
+		ArrayList<String> members = new ArrayList<String>();
+		
+		ArrayList<Integer> memberArrayIds = new ArrayList<Integer>();
+		for(Object id : ((BasicDBList) this.getClassesCollection().findOne(new BasicDBObject("name", className)).get("memberArrayIds"))) {
+			memberArrayIds.add((int) id);
+		}
+		
+		for(int id : memberArrayIds) {
+			for(Object entity : ((BasicDBList) this.getClassMemberArraysCollection().findOne(new BasicDBObject("id", id)).get("members"))) {
+				members.add((String) entity);
+			}
+		}
+		return members.toArray(new String[]{});
+	}
+	
+	// Deletion methods
 	public void dropDatabase() {
 		db.dropDatabase();
 	}
@@ -254,6 +428,8 @@ public class MongoWriter {
 		this.classes.drop();
 	}
 	
+	
+	// Count methods
 	public long getEntitiesCollectionCount() {
 		return this.entities.getCount();
 	}
