@@ -1,0 +1,1841 @@
+
+Collection of clusters
+======================
+[
+    // one cluster
+    {
+       class: <String>,
+       entityNames: [
+            <String>,
+            <String>,
+            ...
+       ]
+    },
+    
+    // 2nd cluster
+    {
+    
+    },
+    ...
+]
+
+
+A yago entity document in MongoDB
+===============================
+
+{
+"_id": {
+  "_time": 1393362821,
+  "_machine": 478294402,
+  "_inc": -1441811116,
+  "_new": false
+},
+"cleanName": "Keio University",
+"disambig": "",
+"name": "<Keio_University>",
+"relations": {
+  "<hasWikipediaArticleLength>": [
+    "78992"
+  ],
+  "<hasWikipediaUrl>": [
+    "<http://en.wikipedia.org/wiki/Keio_University>"
+  ],
+  "<linksTo>": [
+    "<Battle_of_Ueno>",
+    "<Goldman_Sachs>",
+    "<Keio_University_Shonan_Fujisawa_Campus>",
+    "<JirÅ?_Kawasaki>",
+    "<KafÅ«_Nagai>",
+    "<Yohji_Yamamoto>",
+    "<Auto-ID_Labs>",
+    "<Order_of_Culture>",
+    "<Koji_Suzuki>",
+    "<Fujisawa,_Kanagawa>",
+    "<Asahi_Shimbun>",
+    "<University_of_Tokyo>",
+    "<Tsuruoka,_Yamagata>",
+    "<Brand_rankings_of_Japanese_universities>",
+    "<Hiro_Mizushima>",
+    "<Shimazu_clan>",
+    "<Quacquarelli_Symonds>",
+    "<Inukai_Tsuyoshi>",
+    "<Kazuyoshi_Kaneko>",
+    "<Katsuaki_Watanabe>",
+    "<Yoshio_Taniguchi>",
+    "<Hankyu_Railway>",
+    "<Greater_Tokyo_Area>",
+    "<Masaharu_Ikuta>",
+    "<Akira_Amari>",
+    "<Charcoal_Filter>",
+    "<Keio_Medical_Science_Prize>",
+    "<Japan_Post>",
+    "<NHK>",
+    "<Sankei_Shimbun>",
+    "<Takashi_Matsumoto_(lyricist)>",
+    "<People's_New_Party>",
+    "<Jun_Murai>",
+    "<Toyo_Keizai>",
+    "<Keio_Media_Centers_(Libraries)>",
+    "<Nobuteru_Ishihara>",
+    "<Japanese_Economic_Association>",
+    "<Mariya_Takeuchi>",
+    "<Morgan_Stanley>",
+    "<Fusanosuke_Kuhara>",
+    "<IchizÅ?_Kobayashi>",
+    "<Akutagawa_Prize>",
+    "<Nihon_University>",
+    "<Yo_Hitoto>",
+    "<Mitsui_O.S.K._Lines>",
+    "<Kick_the_Can_Crew>",
+    "<Andrew_Thomson_(Australian_politician)>",
+    "<Kenji_Kosaka>",
+    "<Osaka>",
+    "<Yoshiyuki_Kamei>",
+    "<Ryu_Shionoya>",
+    "<Yumeno_KyÅ«saku>",
+    "<Mangaka>",
+    "<Tadamori_Oshima>",
+    "<Democratic_Party_of_Japan>",
+    "<Semantic_Web>",
+    "<Isao_Obata>",
+    "<United_States>",
+    "<Happy_End_(band)>",
+    "<Akira_Nagatsuma>",
+    "<Yokohama>",
+    "<Tatsuya_Ito>",
+    "<Dharma_name>",
+    "<Latin>",
+    "<Nobutada_Saji>",
+    "<Tamisuke_Watanuki>",
+    "<GenjirÅ?_Kaneko>",
+    "<Taro_Takemi>",
+    "<Hiyoshi>",
+    "<Fukuzawa_Yukichi>",
+    "<John_Henry_Wigmore>",
+    "<Edward_Bramwell_Clarke>",
+    "<IchirÅ?_Ozawa>",
+    "<Arashi>",
+    "<Eliica>",
+    "<Yamagata_Prefecture>",
+    "<Columbia_University>",
+    "<Haruhiko_Mikimoto>",
+    "<Tarisa_Watanagase>",
+    "<Tsunekazu_Takeda>",
+    "<Meiji_period>",
+    "<United_Nations_High_Commissioner_for_Refugees>",
+    "<Hidenao_Nakagawa>",
+    "<Ryo_Fukawa>",
+    "<YÅ«zan_Fujita>",
+    "<Gutenberg_Bible>",
+    "<Nikkei_Business_Publications>",
+    "<Hiroshi_Aramata>",
+    "<Rei_Kawakubo>",
+    "<Music_Station>",
+    "<Urawa,_Saitama>",
+    "<Shinzo_Maeda>",
+    "<Shigeru_Ishiba>",
+    "<Masajuro_Shiokawa>",
+    "<Tsukiji>",
+    "<Chiaki_Mukai>",
+    "<Taiwan>",
+    "<Yukio_Ozaki>",
+    "<Nobel_Prize>",
+    "<Tokyo_Tower>",
+    "<Okinawa_Prefecture>",
+    "<House_of_Representatives_of_Japan>",
+    "<Morning_Musume>",
+    "<Sho_Sakurai>",
+    "<Tokyo_Stock_Exchange>",
+    "<Nagasaki_Prefecture>",
+    "<Nihon_Keizai_Shimbun>",
+    "<Jun_EtÅ?>",
+    "<Yutaka_Katayama>",
+    "<Times_Higher_Education_World_University_Rankings>",
+    "<National_Institute_of_Informatics>",
+    "<Yuzaburo_Mogi>",
+    "<Katsu_KaishÅ«>",
+    "<Shusaku_Endo>",
+    "<Ichikawa_Ennosuke_III>",
+    "<IBM>",
+    "<Waseda_University>",
+    "<Boltzmann_Medal>",
+    "<Tokyo_Broadcasting_System>",
+    "<Yujiro_Ishihara>",
+    "<Shinobu_Orikuchi>",
+    "<Tokyo>",
+    "<Saitama_Prefecture>",
+    "<World_Medical_Association>",
+    "<Association_of_Southeast_Asian_Institutions_of_Higher_Learning>",
+    "<Sailor_Moon>",
+    "<Ken_Sakamura>",
+    "<Rabindranath_Tagore>",
+    "<Thailand>",
+    "<KÅ?yÅ«_Ohara>",
+    "<Ted_Nelson>",
+    "<Keiichi_Ishizaka>",
+    "<Han_school>",
+    "<Yoshie_Takeuchi_(announcer)>",
+    "<TV_Asahi>",
+    "<Hirofumi_Nakasone>",
+    "<Xi'an_Jiaotong_University>",
+    "<Minato,_Tokyo>",
+    "<Kobe>",
+    "<Sosuke_Sumitani>",
+    "<Japan_Art_Academy>",
+    "<Yukana>",
+    "<Kreva_(rapper)>",
+    "<Daiwa_Securities_Group>",
+    "<Hiroshi_Nakai>",
+    "<The_pen_is_mightier_than_the_sword>",
+    "<Akio_Toyoda>",
+    "<Ryogo_Kubo>",
+    "<United_Nations_Development_Programme>",
+    "<Nakatsu_Domain>",
+    "<Takeo_Kawamura_(politician)>",
+    "<Shigefumi_Matsuzawa>",
+    "<Sakura_Diaries>",
+    "<Hiroshima_Prefecture>",
+    "<Misako_Konno>",
+    "<Ryutaro_Hashimoto>",
+    "<KajirÅ?_Yamamoto>",
+    "<HeizÅ?_Takenaka>",
+    "<Kitasato_ShibasaburÅ?>",
+    "<Hiroshi_ÅŒnogi>",
+    "<Fumihiko_Maki>",
+    "<Liberal_Democratic_Party_(Japan)>",
+    "<Shanghai_Jiao_Tong_University>",
+    "<SakutarÅ?_Hagiwara>",
+    "<Carlyle_Group>",
+    "<TÅ?ru_ShÅ?riki>",
+    "<Fumi_Yoshinaga>",
+    "<Shiseido>",
+    "<Akihiko_Hoshide>",
+    "<Thomson_Reuters>",
+    "<Edo>",
+    "<Takeo_Hiranuma>",
+    "<Tigarah>",
+    "<Kanagawa_Prefecture>",
+    "<Junichiro_Koizumi>",
+    "<ShirÅ?_Asano_(politician)>",
+    "<Yomiuri_Shimbun>",
+    "<Masaru_Tomita>",
+    "<World_Wide_Web_Consortium>",
+    "<Kawasaki,_Kanagawa>",
+    "<Private_university>",
+    "<Qing_Dynasty>",
+    "<Akihiko_Noro>",
+    "<Truly_Strong_Universities>",
+    "<Toshio_Kagami>",
+    "<Takahiro_Konagawa>",
+    "<Asami_Konno>",
+    "<Brown_University>",
+    "<Japan>",
+    "<Nissan_Motors>",
+    "<James_Cousins>",
+    "<India>",
+    "<Mitsuo_Horiuchi>",
+    "<Second_Life>",
+    "<Kazuki_Kaneshiro>",
+    "<Rugby_union>",
+    "<Mie_Prefecture>",
+    "<Takarazuka_Revue>",
+    "<Enomoto_Takeaki>",
+    "<Ring_(film)>",
+    "<Eduniversal>",
+    "<Shibuya,_Tokyo>",
+    "<Albert_Einstein>",
+    "<All_Nippon_Airways>"
+  ],
+  "rdf:type": [
+    "<wordnet_educational_institution_108276342>",
+    "<wordnet_university_108286569>",
+    "<wikicategory_Educational_institutions_established_in_1858>",
+    "<wikicategory_Private_universities_and_colleges_in_Japan>",
+    "<wikicategory_Universities_and_colleges_in_Kanagawa_Prefecture>",
+    "<wikicategory_Universities_and_colleges_in_Tokyo>",
+    "<wordnet_abstraction_100002137>",
+    "<wordnet_group_100031264>",
+    "<wordnet_institution_108053576>",
+    "<wordnet_organization_108008335>",
+    "<wordnet_social_group_107950920>",
+    "<yagoLegalActor>",
+    "<yagoLegalActorGeo>",
+    "<yagoPermanentlyLocatedEntity>",
+    "owl:Thing"
+  ]
+},
+"searchString": "keio university"
+}
+
+
+A searchMap document in MongoDB
+=========================================
+
+{
+  "_id": {
+    "_time": 1393473556,
+    "_machine": 936756636,
+    "_inc": 1393491335,
+    "_new": false
+  },
+  "mappings": {
+    "a": [
+      14072597,
+      1914533
+    ],
+    "about": [
+      11726029,
+      14072597
+    ],
+    "accent": [
+      8771081
+    ],
+    "aceh": [
+      11321108
+    ],
+    "adapter": [
+      15368204
+    ],
+    "after": [
+      11321106
+    ],
+    "agent": [
+      2265468
+    ],
+    "aid": [
+      14111805,
+      9450168,
+      9450169
+    ],
+    "air": [
+      8126960
+    ],
+    "airline": [
+      14152056
+    ],
+    "airport": [
+      29125,
+      7579057,
+      7579061
+    ],
+    "american": [
+      14072595
+    ],
+    "american girl": [
+      14072595
+    ],
+    "an": [
+      8721105
+    ],
+    "and": [
+      12123240,
+      12123241,
+      12383563,
+      14515913,
+      8086117,
+      8444412,
+      9450169
+    ],
+    "arabia": [
+      4032623,
+      8851439
+    ],
+    "arezzo": [
+      6533896
+    ],
+    "art": [
+      15685493
+    ],
+    "association": [
+      2256677
+    ],
+    "at": [
+      11764796
+    ],
+    "bali": [
+      29125,
+      29126,
+      29143,
+      29144,
+      16162267,
+      2296712,
+      2296713,
+      425913,
+      4544968,
+      8562750
+    ],
+    "banda": [
+      11321108,
+      18175036
+    ],
+    "banda aceh": [
+      11321108
+    ],
+    "banda sea": [
+      18175036
+    ],
+    "bandung": [
+      613904
+    ],
+    "bangladesh": [
+      8851439
+    ],
+    "bantul": [
+      15253264,
+      5029653,
+      7758451
+    ],
+    "barak": [
+      6096531
+    ],
+    "batam": [
+      2256676
+    ],
+    "bbc": [
+      10741619
+    ],
+    "bbc news": [
+      10741619
+    ],
+    "benny": [
+      16643990
+    ],
+    "benny hinn": [
+      16643990
+    ],
+    "bill": [
+      17360273
+    ],
+    "bird": [
+      10658313,
+      11354665,
+      11794002,
+      3026918,
+      3026924,
+      3482194,
+      3482196,
+      5156559
+    ],
+    "bird flu": [
+      10658313,
+      11354665,
+      11794002,
+      3026918,
+      3026924,
+      3482194,
+      3482196
+    ],
+    "bird of paradise": [
+      5156559
+    ],
+    "board": [
+      12123237
+    ],
+    "borneo": [
+      1281609
+    ],
+    "boyz": [
+      9669920
+    ],
+    "bulgari": [
+      8562723,
+      8562725
+    ],
+    "burned": [
+      6096545
+    ],
+    "busi": [
+      12383545,
+      12383564
+    ],
+    "business": [
+      12383545,
+      12383564,
+      18124306
+    ],
+    "cambodia": [
+      8851439
+    ],
+    "capital": [
+      14232331
+    ],
+    "capitol": [
+      5179747
+    ],
+    "car": [
+      6096545
+    ],
+    "carlton": [
+      29143
+    ],
+    "carving": [
+      12946949
+    ],
+    "center": [
+      7046364
+    ],
+    "china": [
+      8851439
+    ],
+    "christian": [
+      16165764
+    ],
+    "christianity": [
+      16165764
+    ],
+    "city": [
+      613904
+    ],
+    "clothing": [
+      12865783
+    ],
+    "club": [
+      2265374
+    ],
+    "code": [
+      3786177,
+      3786178,
+      9623344
+    ],
+    "communication": [
+      18124306,
+      18124308
+    ],
+    "consulate": [
+      715960,
+      715961
+    ],
+    "continent": [
+      14232333
+    ],
+    "contract": [
+      12383563,
+      14515913
+    ],
+    "converter": [
+      15368203
+    ],
+    "cosmopolitan": [
+      6096545
+    ],
+    "country": [
+      10606470,
+      14232333,
+      1914533
+    ],
+    "culture": [
+      11973882,
+      9713073
+    ],
+    "denpasar": [
+      29125
+    ],
+    "di": [
+      2265374
+    ],
+    "dictator": [
+      4432338
+    ],
+    "discovered": [
+      16966845
+    ],
+    "distributor": [
+      15426120
+    ],
+    "do": [
+      12383545,
+      12383564
+    ],
+    "dutch": [
+      11141838
+    ],
+    "earthquake": [
+      10170095,
+      11012993,
+      11132708,
+      11765474,
+      12600569,
+      12865783,
+      13320078,
+      14278197,
+      14962519,
+      15377658,
+      18175036,
+      6437656,
+      6538082,
+      6673127,
+      6673129,
+      8444412,
+      8830152,
+      9025282,
+      9450169
+    ],
+    "east": [
+      14012113
+    ],
+    "east java": [
+      14012113
+    ],
+    "electric": [
+      15368203
+    ],
+    "electricity": [
+      15368203
+    ],
+    "embassy": [
+      16738936,
+      2265463,
+      6736987
+    ],
+    "estate": [
+      9434671
+    ],
+    "eurasian": [
+      11141838
+    ],
+    "fact": [
+      11726029
+    ],
+    "facts": [
+      11726029,
+      9713079,
+      9713130
+    ],
+    "fair": [
+      11012558
+    ],
+    "fans": [
+      2265374
+    ],
+    "fault": [
+      17839996
+    ],
+    "female": [
+      6085783
+    ],
+    "ferry": [
+      14072594,
+      14072595,
+      14072597
+    ],
+    "fertility": [
+      366495
+    ],
+    "firm": [
+      8280181,
+      8280185
+    ],
+    "fled": [
+      14267128
+    ],
+    "flight": [
+      4544968
+    ],
+    "food": [
+      9713074,
+      9930608
+    ],
+    "for sale": [
+      7373770
+    ],
+    "forget": [
+      11764796
+    ],
+    "former": [
+      8721104
+    ],
+    "found": [
+      793248
+    ],
+    "frames": [
+      7313375
+    ],
+    "french": [
+      8721752
+    ],
+    "furniture": [
+      11012558,
+      14467489,
+      6570090
+    ],
+    "garden": [
+      29142
+    ],
+    "gastroenterologist": [
+      2265400,
+      2265401,
+      2265404
+    ],
+    "gastroenterology": [
+      2265400
+    ],
+    "geologist": [
+      11764796
+    ],
+    "girl": [
+      14072595
+    ],
+    "god": [
+      3978400
+    ],
+    "google": [
+      15400149
+    ],
+    "government": [
+      9713079
+    ],
+    "halmahera": [
+      14278197
+    ],
+    "harry": [
+      4047096
+    ],
+    "harry kim": [
+      4047096
+    ],
+    "hatta": [
+      3208013
+    ],
+    "help": [
+      17022422
+    ],
+    "history": [
+      223327
+    ],
+    "home": [
+      6275099,
+      7373770
+    ],
+    "hotel": [
+      7579057,
+      7579061
+    ],
+    "how": [
+      15380594,
+      18175036
+    ],
+    "how many": [
+      18175036
+    ],
+    "india": [
+      4815604
+    ],
+    "indian": [
+      8851439
+    ],
+    "indonesia": [
+      29125,
+      29126,
+      29142,
+      29143,
+      29144,
+      29145,
+      104060,
+      1006951,
+      1028391,
+      10015067,
+      10015069,
+      10015114,
+      10082975,
+      10083003,
+      10083019,
+      10083020,
+      10083029,
+      10138029,
+      10170095,
+      10275149,
+      10557847,
+      10557848,
+      10606470,
+      10618881,
+      10618882,
+      10658313,
+      10666762,
+      10695769,
+      10706122,
+      10741619,
+      10832337,
+      10864260,
+      11012558,
+      11012993,
+      11013032,
+      11132708,
+      11141838,
+      11162666,
+      11273038,
+      11321106,
+      11321108,
+      11345534,
+      11354665,
+      11449764,
+      11524714,
+      11579817,
+      11634814,
+      11634821,
+      11726029,
+      11764796,
+      11765474,
+      11794002,
+      11794003,
+      11972162,
+      11973881,
+      11973882,
+      1275990,
+      1281605,
+      1281606,
+      1281608,
+      1281609,
+      1293229,
+      12123237,
+      12123240,
+      12123241,
+      12123242,
+      12180677,
+      12180775,
+      12383545,
+      12383563,
+      12383564,
+      12393010,
+      12401830,
+      12401831,
+      12401834,
+      12401920,
+      12440577,
+      12587841,
+      12600569,
+      12760698,
+      12760700,
+      12865783,
+      12874627,
+      12946949,
+      1361505,
+      13040864,
+      13122236,
+      13320078,
+      13363875,
+      13363949,
+      13414503,
+      13460843,
+      13585518,
+      13641043,
+      13658840,
+      13671296,
+      13931111,
+      13932195,
+      13962161,
+      1410631,
+      1415116,
+      14012113,
+      14072594,
+      14072595,
+      14072597,
+      14111805,
+      14152056,
+      14171173,
+      14183680,
+      14232330,
+      14232331,
+      14232332,
+      14232333,
+      14232334,
+      14267127,
+      14267128,
+      14269653,
+      14272784,
+      14278197,
+      14278200,
+      14278201,
+      14340220,
+      14373715,
+      14376205,
+      14466306,
+      14467489,
+      14503464,
+      14507995,
+      14508676,
+      14515913,
+      14518477,
+      14664880,
+      14748525,
+      14770721,
+      14786481,
+      14962519,
+      15060106,
+      15104811,
+      15253264,
+      15285724,
+      15335588,
+      15368203,
+      15368204,
+      15377658,
+      15380594,
+      15400149,
+      15426120,
+      15461418,
+      15685493,
+      15957880,
+      16099931,
+      16137309,
+      16162267,
+      16165763,
+      16165764,
+      16284202,
+      16309023,
+      16309024,
+      16309025,
+      16476144,
+      16643963,
+      16643988,
+      16643989,
+      16643990,
+      16738936,
+      16770029,
+      16836559,
+      16966844,
+      16966845,
+      16967406,
+      16980277,
+      1716525,
+      1745536,
+      17022422,
+      17030195,
+      17252579,
+      17360273,
+      17456033,
+      17638471,
+      17681748,
+      17689173,
+      17713760,
+      17782255,
+      17797052,
+      17810415,
+      17839996,
+      17925658,
+      18031037,
+      18097998,
+      18124306,
+      18124307,
+      18124308,
+      18175036,
+      1914533,
+      223327,
+      227171,
+      230015,
+      2172268,
+      2256676,
+      2256677,
+      2265374,
+      2265400,
+      2265401,
+      2265404,
+      2265463,
+      2265468,
+      2284033,
+      2296712,
+      2296713,
+      2476774,
+      2655037,
+      2706795,
+      2709199,
+      366402,
+      366495,
+      3026918,
+      3026924,
+      3062956,
+      3183690,
+      3183691,
+      3183694,
+      3183695,
+      3208013,
+      3288104,
+      3288106,
+      3288111,
+      3288113,
+      3408141,
+      3482194,
+      3482196,
+      3650983,
+      3700736,
+      3786177,
+      3786178,
+      3925083,
+      3978399,
+      3978400,
+      425913,
+      437030,
+      485810,
+      485816,
+      4032623,
+      4047096,
+      4346933,
+      4430525,
+      4432337,
+      4432338,
+      4489727,
+      4489729,
+      4544968,
+      4591864,
+      4686757,
+      4815536,
+      4815604,
+      523930,
+      523948,
+      5013170,
+      5029653,
+      5084586,
+      5084587,
+      5084595,
+      5129027,
+      5156559,
+      5156560,
+      5179747,
+      5308050,
+      5312660,
+      5577036,
+      5671102,
+      5681642,
+      5969436,
+      613904,
+      6085770,
+      6085782,
+      6085783,
+      6085795,
+      6085797,
+      6096530,
+      6096531,
+      6096545,
+      6096670,
+      6135309,
+      6160304,
+      6201803,
+      6275099,
+      6302675,
+      6437656,
+      6533888,
+      6533896,
+      6538082,
+      6570090,
+      6673127,
+      6673129,
+      6674948,
+      6736987,
+      6904498,
+      6981296,
+      715960,
+      715961,
+      793248,
+      793267,
+      7002087,
+      7009085,
+      7046364,
+      7046414,
+      7046423,
+      7313375,
+      7373770,
+      7579057,
+      7579061,
+      7579077,
+      7685189,
+      7758451,
+      7819440,
+      7852458,
+      7852459,
+      7874867,
+      8086117,
+      8126960,
+      8181699,
+      8191863,
+      8261253,
+      8280181,
+      8280185,
+      8298370,
+      8399105,
+      8444412,
+      8497574,
+      8562723,
+      8562725,
+      8562750,
+      8703862,
+      8721104,
+      8721105,
+      8721107,
+      8721752,
+      8771081,
+      8830152,
+      8831709,
+      8851439,
+      990224,
+      9025282,
+      9152549,
+      9152551,
+      9171895,
+      9171897,
+      9175950,
+      9175967,
+      9392075,
+      9434671,
+      9440010,
+      9449596,
+      9450168,
+      9450169,
+      9517425,
+      9583390,
+      9588945,
+      9599153,
+      9623344,
+      9669920,
+      9713073,
+      9713074,
+      9713079,
+      9713130,
+      9718769,
+      9819635,
+      9930608
+    ],
+    "information": [
+      14376205
+    ],
+    "interesting": [
+      9713130
+    ],
+    "interiors": [
+      13363875
+    ],
+    "international": [
+      29125,
+      9434671
+    ],
+    "international airport": [
+      29125
+    ],
+    "iraq": [
+      8851439
+    ],
+    "is": [
+      11132708,
+      11449764,
+      14152056,
+      14232332,
+      14232333,
+      1914533
+    ],
+    "islam": [
+      15380594
+    ],
+    "island": [
+      8721105
+    ],
+    "israel": [
+      8851439
+    ],
+    "italy": [
+      6533896
+    ],
+    "jakarta": [
+      16309024,
+      16309025,
+      17782255,
+      3026924,
+      3208013,
+      3288104,
+      3482194,
+      3482196,
+      3786177,
+      3786178,
+      6981296,
+      7579057,
+      7579061
+    ],
+    "jan": [
+      14072597
+    ],
+    "java": [
+      13962161,
+      14012113,
+      14232331,
+      14232334,
+      15060106,
+      223327,
+      4591864
+    ],
+    "jeep": [
+      2265374
+    ],
+    "jewelry": [
+      12401830,
+      12401831,
+      12401834,
+      3183690,
+      3183691,
+      3183694,
+      3183695,
+      6533888,
+      6533896
+    ],
+    "jews": [
+      17022422
+    ],
+    "job": [
+      10015067
+    ],
+    "jobs": [
+      10015067
+    ],
+    "jordan": [
+      8851439
+    ],
+    "judge": [
+      3978400
+    ],
+    "kelly": [
+      10015069
+    ],
+    "kelly services": [
+      10015069
+    ],
+    "kill": [
+      14072597
+    ],
+    "killing": [
+      14072597
+    ],
+    "kim": [
+      4047096
+    ],
+    "koos": [
+      7874867
+    ],
+    "korea": [
+      8851439
+    ],
+    "krakatoa": [
+      11764796
+    ],
+    "language": [
+      14232332,
+      5084587,
+      8851439
+    ],
+    "law": [
+      8280181,
+      8280185
+    ],
+    "law firm": [
+      8280185
+    ],
+    "leader": [
+      10138029
+    ],
+    "leaf": [
+      15426120
+    ],
+    "lies": [
+      17839996
+    ],
+    "list": [
+      9434671
+    ],
+    "lives": [
+      18175036
+    ],
+    "lizard": [
+      1410631
+    ],
+    "location": [
+      5681642
+    ],
+    "lost": [
+      18175036,
+      5156560,
+      6135309
+    ],
+    "lost world": [
+      5156560,
+      6135309
+    ],
+    "made": [
+      13122236,
+      14467489
+    ],
+    "magnitude": [
+      14278200,
+      14278201
+    ],
+    "makassar": [
+      8721104
+    ],
+    "malang": [
+      14012113
+    ],
+    "malaysia": [
+      12123240,
+      12123241,
+      2284033,
+      8851439
+    ],
+    "mani": [
+      18175036
+    ],
+    "map": [
+      10606470,
+      10618881,
+      10666762,
+      10695769,
+      11273038,
+      11345534,
+      11794003,
+      11972162,
+      1281605,
+      1281608,
+      1281609,
+      12874627,
+      14232331,
+      14232334,
+      14269653,
+      14664880,
+      15285724,
+      16770029,
+      16967406,
+      1745536,
+      17689173,
+      18031037,
+      18097998,
+      227171,
+      4815604,
+      523930,
+      523948,
+      5013170,
+      5029653,
+      5129027,
+      6201803,
+      6302675,
+      6674948,
+      8181699,
+      8298370,
+      9152549,
+      9152551,
+      9599153
+    ],
+    "maps": [
+      16836559
+    ],
+    "march": [
+      14278197,
+      14278200
+    ],
+    "martha": [
+      29142
+    ],
+    "masks": [
+      17713760
+    ],
+    "masturbation": [
+      15104811
+    ],
+    "may": [
+      10658313,
+      11354665,
+      14962519
+    ],
+    "medical": [
+      485810,
+      485816,
+      9449596
+    ],
+    "medical transcription": [
+      485810,
+      485816
+    ],
+    "models": [
+      6085783
+    ],
+    "monks": [
+      11973882
+    ],
+    "most": [
+      11132708
+    ],
+    "motorcycle": [
+      4346933
+    ],
+    "mount": [
+      10618882,
+      14232330,
+      16967406
+    ],
+    "mount merapi": [
+      10618882,
+      14232330,
+      16967406
+    ],
+    "murder": [
+      6096545
+    ],
+    "music": [
+      7874867
+    ],
+    "muslims": [
+      6085783
+    ],
+    "name": [
+      8721104
+    ],
+    "never": [
+      11764796
+    ],
+    "never forget": [
+      11764796
+    ],
+    "new": [
+      10557847,
+      10557848,
+      14340220,
+      16966845,
+      793248,
+      793267
+    ],
+    "new world": [
+      16966845
+    ],
+    "news": [
+      10083003,
+      10083019,
+      10083029,
+      10557847,
+      10557848,
+      10741619,
+      11354665,
+      11765474,
+      1281606,
+      14340220,
+      3288106,
+      3288111,
+      3288113,
+      523930
+    ],
+    "nike": [
+      13122236
+    ],
+    "off": [
+      14072597
+    ],
+    "office": [
+      12123242
+    ],
+    "official": [
+      8851439
+    ],
+    "official language": [
+      8851439
+    ],
+    "on": [
+      10557847,
+      10557848,
+      11765474,
+      13122236,
+      14278197,
+      14278200,
+      14340220,
+      17839996
+    ],
+    "orangutan": [
+      9669920
+    ],
+    "over": [
+      10741619
+    ],
+    "pakistan": [
+      8851439
+    ],
+    "panasonic": [
+      14518477
+    ],
+    "paper": [
+      14786481
+    ],
+    "paradis": [
+      5156559
+    ],
+    "paradise": [
+      5156559
+    ],
+    "park": [
+      6096545
+    ],
+    "part": [
+      14232333
+    ],
+    "past": [
+      4432338
+    ],
+    "people": [
+      3700736
+    ],
+    "philippines": [
+      8851439
+    ],
+    "photo": [
+      16162267
+    ],
+    "picture": [
+      7313375
+    ],
+    "playboy": [
+      2476774
+    ],
+    "playboy indonesia": [
+      2476774
+    ],
+    "po": [
+      8721105
+    ],
+    "pornography": [
+      17360273
+    ],
+    "post": [
+      3288104
+    ],
+    "press": [
+      14278197,
+      14278200
+    ],
+    "property": [
+      9434671
+    ],
+    "purpose": [
+      15060106
+    ],
+    "quake": [
+      14508676
+    ],
+    "quality": [
+      7579057,
+      7579061
+    ],
+    "real": [
+      9434671
+    ],
+    "real estate": [
+      9434671
+    ],
+    "records": [
+      7874867
+    ],
+    "release": [
+      14278197,
+      14278200
+    ],
+    "relief": [
+      14111805
+    ],
+    "religion": [
+      10864260
+    ],
+    "religious": [
+      3288106
+    ],
+    "rice": [
+      14267128
+    ],
+    "ritz": [
+      29143
+    ],
+    "row": [
+      10741619
+    ],
+    "s": [
+      10557848
+    ],
+    "sale": [
+      7373770
+    ],
+    "saudi arabia": [
+      4032623,
+      8851439
+    ],
+    "science": [
+      9440010
+    ],
+    "sea": [
+      18175036
+    ],
+    "semarang": [
+      14373715
+    ],
+    "services": [
+      10015069
+    ],
+    "show": [
+      10741619
+    ],
+    "silver": [
+      6533888,
+      6533896
+    ],
+    "singers": [
+      7874867
+    ],
+    "slip": [
+      13122236
+    ],
+    "sneaker": [
+      13122236
+    ],
+    "spa": [
+      29142,
+      29144,
+      29145
+    ],
+    "specialist": [
+      2265400
+    ],
+    "species": [
+      793248,
+      793267
+    ],
+    "spice": [
+      4686757
+    ],
+    "spoken": [
+      14232332
+    ],
+    "sports": [
+      9713073
+    ],
+    "spread": [
+      15380594
+    ],
+    "stations": [
+      10083020
+    ],
+    "sterling": [
+      12401920
+    ],
+    "storm": [
+      14072597
+    ],
+    "sukarno": [
+      3208013
+    ],
+    "sulawesi": [
+      8721104
+    ],
+    "sumatra": [
+      14072597,
+      437030
+    ],
+    "surabaya": [
+      12393010
+    ],
+    "syria": [
+      8851439
+    ],
+    "tables": [
+      8771081
+    ],
+    "television": [
+      10083020
+    ],
+    "tell": [
+      6096530
+    ],
+    "temple": [
+      15060106
+    ],
+    "thailand": [
+      8851439
+    ],
+    "the most": [
+      11132708
+    ],
+    "the news": [
+      10557847,
+      10557848
+    ],
+    "the ritz": [
+      29143
+    ],
+    "time": [
+      10015114,
+      6904498
+    ],
+    "time zone": [
+      10015114
+    ],
+    "to": [
+      10015067,
+      12600569,
+      15380594,
+      4544968,
+      6096530,
+      9450168,
+      9450169
+    ],
+    "tobacco": [
+      15426120
+    ],
+    "today": [
+      11321106
+    ],
+    "tour": [
+      13040864
+    ],
+    "tourism": [
+      12123242,
+      14183680,
+      9449596
+    ],
+    "tourist": [
+      12123237
+    ],
+    "trade": [
+      11012558
+    ],
+    "trade fair": [
+      11012558
+    ],
+    "traditions": [
+      9713073
+    ],
+    "transcription": [
+      485810,
+      485816
+    ],
+    "translation": [
+      6096530
+    ],
+    "transvestite": [
+      10741619
+    ],
+    "travel": [
+      12600569,
+      15253264,
+      15368204
+    ],
+    "trip": [
+      10015067
+    ],
+    "tsunami": [
+      11321106,
+      1361505,
+      13658840,
+      15335588,
+      2655037,
+      3978400,
+      5577036,
+      7046364
+    ],
+    "turkey": [
+      8851439
+    ],
+    "uae": [
+      15368203
+    ],
+    "universal": [
+      15368204
+    ],
+    "victims": [
+      1361505
+    ],
+    "vietnam": [
+      8851439
+    ],
+    "volcano": [
+      1275990,
+      1293229,
+      14466306,
+      15957880,
+      16980277,
+      3408141,
+      3978399,
+      4430525,
+      613904,
+      9440010,
+      9517425,
+      9583390
+    ],
+    "warn": [
+      1361505
+    ],
+    "warning": [
+      7046364
+    ],
+    "weather": [
+      425913
+    ],
+    "were": [
+      1361505,
+      18175036
+    ],
+    "what": [
+      14152056,
+      14232332,
+      17839996
+    ],
+    "where": [
+      11132708,
+      11449764
+    ],
+    "wholesale": [
+      12401830,
+      12401831,
+      12401834,
+      12401920
+    ],
+    "why": [
+      11764796
+    ],
+    "wild": [
+      9669920
+    ],
+    "will": [
+      11764796
+    ],
+    "woman": [
+      6096545
+    ],
+    "women": [
+      4032623
+    ],
+    "women in indonesia": [
+      4032623
+    ],
+    "wood": [
+      12946949
+    ],
+    "world": [
+      11273038,
+      16966845,
+      5129027,
+      5156560,
+      6135309
+    ],
+    "written communication": [
+      18124308
+    ],
+    "yogyakarta": [
+      11162666,
+      14748525,
+      16137309,
+      5312660,
+      6201803
+    ],
+    "youth": [
+      6085797
+    ],
+    "zip": [
+      3786177,
+      3786178,
+      9623344
+    ],
+    "zip code": [
+      3786177,
+      3786178,
+      9623344
+    ],
+    "zone": [
+      10015114
+    ]
+  },
+  "searchString": "indonesia"
+}

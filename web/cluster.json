@@ -1,0 +1,18 @@
+[
+    {
+        "class": "className",
+        "entityNames": [
+            "entityName",
+            "entityName",
+            "entityName"
+        ]
+    },
+    {
+        "class": "className",
+        "entityNames": [
+            "entityName",
+            "entityName",
+            "entityName"
+        ]
+    }
+]
