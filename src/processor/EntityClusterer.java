@@ -1,5 +1,8 @@
 package processor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import processor.yago.YagoSimpleTypesProcessor;
 
 import com.mongodb.BasicDBList;
@@ -40,13 +43,15 @@ public class EntityClusterer {
 	 * This maps all entities to their leaf categories, by using using the mapping in the original yagoSimpleTypes file
 	 */
 	public void mapLeaves(YagoSimpleTypesProcessor processor) {
+		System.out.println("EntityClusterer: Processing...");
 		processor.processClassesTsv();
 	}
 	
 	/**
-	 * This will map all entities to all categories and is extremely slow
+	 * This will map all entities to either all categories or to their leaf categories
+	 * 
+	 * This performs the mapping in memory, otherwise it runs for days due to I/O. Takes about 1-2Gb or RAM (maximum)
 	 */
-	// Currently a NO-OP !
 	public void mapAll() {
 		
 		DBCollection entities;
@@ -64,6 +69,8 @@ public class EntityClusterer {
 		
 		System.out.println("EntityClusterer: Processing...");
 		
+		HashMap<String, ArrayList<String>> map = new HashMap<String, ArrayList<String>>();
+		
 		try {
 			while(cursor.hasNext()) {
 				entity = cursor.next();
@@ -71,12 +78,14 @@ public class EntityClusterer {
 				
 				if(entity.containsField("relations")) {
 					relations = (BasicDBObject) entity.get("relations");
-					if(relations.containsField("rdf:type")) {
+					if(relations.containsField("rdf:type")) {						
 						rdfTypes = (BasicDBList) relations.get("rdf:type");
 						classes = rdfTypes.toArray(new String[]{});
 						for(String className : classes) {
-							// System.out.println(entityName + " " + className);
-							// mongoWriter.addOrUpdateClass(className, entityName);
+							if(! map.containsKey(className)) {
+								map.put(className, new ArrayList<String>());
+							}
+							map.get(className).add(entityName);
 						}
 					}
 				}
@@ -90,6 +99,11 @@ public class EntityClusterer {
 					System.out.println("EntityClusterer: " + this.updateCount / 1000 + "k entities processed (" + seconds + "s)");
 				}
 			}
+			
+			// Currently this does not write to MongoDB! Set write operations here if we need that 
+			
+			System.out.println(map.keySet().size());
+			
 		} finally {
 			mongoWriter.close();
 		}

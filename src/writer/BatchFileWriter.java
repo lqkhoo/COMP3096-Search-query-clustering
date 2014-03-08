@@ -83,6 +83,14 @@ public class BatchFileWriter {
 		
 	}
 	
+	public void deleteFilesInDir() {
+		for(File file : this.dir.listFiles()) {
+			if (! file.isDirectory()) {
+				file.delete();
+			}
+		}
+	}
+	
 	/*
 	 * This deletes all files in a given directory. Will not touch
 	 *   subdirectories or any files in subdirectories.

@@ -2,7 +2,6 @@ package writer;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +55,8 @@ public class MongoWriter {
 			this.entities.ensureIndex(new BasicDBObject("searchString", 1));
 			
 			this.classes.ensureIndex(new BasicDBObject("name", 1));
+			this.classes.ensureIndex(new BasicDBObject("nId", 1));
+			
 			this.classMemberArrays.ensureIndex(new BasicDBObject("id", 1));
 			
 			this.searchMaps.ensureIndex(new BasicDBObject("searchString", 1));
@@ -259,6 +260,17 @@ public class MongoWriter {
 		}
 	}
 	
+	public void setClassNId(String className, int nId) {
+		BasicDBObject selector = new BasicDBObject("name", className);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		setFields = new BasicDBObject("nId", nId);
+		setOperator.put("$set", setFields);
+		
+		this.classes.update(selector, setOperator, false, false);
+	}
+	
 	/**
 	 * Adds or updates a document in the "classes" collection
 	 * This method is very slow compared to the above two, which build all information in RAM and writes in one go
@@ -364,7 +376,7 @@ public class MongoWriter {
 		return this.classMemberArrays;
 	}
 	
-	public DBCollection getEntityMappingsCollection() {
+	public DBCollection getSearchMapsCollection() {
 		return this.searchMaps;
 	}
 	
@@ -414,6 +426,7 @@ public class MongoWriter {
 		}
 		return members.toArray(new String[]{});
 	}
+	
 	
 	// Deletion methods
 	public void dropDatabase() {

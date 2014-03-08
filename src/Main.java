@@ -1,7 +1,15 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.util.ArrayList;
+
+import model.SessionToClassMapping;
 import model.YagoHierarchy;
+import processor.DBCacher;
 import processor.EntityClusterer;
 import processor.Preprocessor;
 import processor.QueryMapper;
+import processor.SessionClusterer;
 import processor.YagoProcessor;
 import processor.yago.AYagoProcessor;
 import processor.yago.YagoImportantTypesProcessor;
@@ -106,19 +114,43 @@ public class Main {
 				// -- Tests --
 				
 				// -- Hierarchy operations --
-				new YagoSimpleTaxonomyProcessor(	hierarchy, "input/yago/tsv/yagoSimpleTaxonomy.tsv", "tsv"),
-				new YagoTaxonomyProcessor(			hierarchy, "input/yago/tsv/yagoTaxonomy.tsv", "tsv"),
+				// new YagoSimpleTaxonomyProcessor(	hierarchy, "input/yago/tsv/yagoSimpleTaxonomy.tsv", "tsv"),
+				// new YagoTaxonomyProcessor(			hierarchy, "input/yago/tsv/yagoTaxonomy.tsv", "tsv"),
 				
 				
 		});
 		
 		yagoProcessor.run();
+		// hierarchy.toFile();	// Uncomment this line to write to file
+		hierarchy.toDb(); 		// Uncomment this line to write to MongoDB
+	}
+	
+	/**
+	 * 
+	 */
+	private static void augmentClassesWithNId() {
+		MongoWriter mongoWriter = newMongoWriter();
+		DBCollection classes = mongoWriter.getClassesCollection();
+		DBCursor cursor;
+		DBObject cls;
 		
-		// Uncomment this line to write to file
-		// hierarchy.toFile();
+		String className;
+		int nId = 0;
 		
-		// Uncomment this line to write to MongoDB
-		hierarchy.toDb();
+		int classesProcessed = 0;
+		
+		cursor = classes.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			cls = cursor.next();
+			className = (String) cls.get("name");
+			mongoWriter.setClassNId(className, nId);
+			
+			nId++;
+			classesProcessed++;
+			if(classesProcessed % 1000 == 0) {
+				System.out.println("augmentClassesWithNId: Classes processed: " + classesProcessed / 1000 + "k entities.");
+			}
+		}
 	}
 	
 	/**
@@ -129,6 +161,10 @@ public class Main {
 		MongoWriter mongoWriter = newMongoWriter();
 		EntityClusterer entityClusterer = new EntityClusterer(mongoWriter);
 		YagoSimpleTypesProcessor processor = new YagoSimpleTypesProcessor(mongoWriter, "input/yago/tsv/yagoSimpleTypes.tsv", "tsv");
+		
+		// either only map leaves or all categories but never do both
+		
+		// entityClusterer.mapAll();
 		entityClusterer.mapLeaves(processor);
 	}
 	
@@ -145,7 +181,43 @@ public class Main {
 		QueryMapper queryMapper = new QueryMapper(mongoWriter);
 		queryMapper.run();
 	}
+	
+	private static void cacheValidSearchStrings() {
+		MongoWriter mongoWriter = newMongoWriter();
+		DBCacher dbCacher = new DBCacher(mongoWriter);
+		dbCacher.cacheValidEntitySearchStrings();
+	}
+	
+	private static void cacheSearchStringsToClasses() {
+		MongoWriter mongoWriter = newMongoWriter();
+		DBCacher dbCacher = new DBCacher(mongoWriter);
+		dbCacher.cacheSearchStringsToClasses();
+	}
+	
+	/**
+	 * This clusters search sessions
+	 * 
+	 * Currently takes the output of mapQueries() as input to avoid re-matching the substrings
+	 * from query logs to mongoDB entity entries, which is very computationally and I/O-expensive
+	 */
+	private static void clusterSearchSessions(String mode) {
 		
+		MongoWriter mongoWriter = newMongoWriter();
+		SessionClusterer sessionClusterer;
+		/*
+		sessionClusterer = new SessionClusterer(mongoWriter, SessionToClassMapping.MODE_FULL_MAPPINGS);
+		sessionClusterer.run();
+		
+		sessionClusterer = new SessionClusterer(mongoWriter, SessionToClassMapping.MODE_PARTIAL_MAPPINGS);
+		sessionClusterer.run();
+		
+		sessionClusterer = new SessionClusterer(mongoWriter, SessionToClassMapping.MODE_SESSION_IDS);
+		sessionClusterer.run();
+		*/
+		sessionClusterer = new SessionClusterer(mongoWriter, mode);
+		sessionClusterer.run();
+	}
+	
 	private static void printEntities() {
 		
 		DBCollection entities;
@@ -174,6 +246,28 @@ public class Main {
 
 	}
 	
+	private static void printEntities(String searchString) {
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		DBCollection collection;
+		DBCursor cursor;
+		DBObject entityMap;
+		
+		MongoWriter mongoWriter = newMongoWriter();
+		
+		collection = mongoWriter.getEntitiesCollection();
+		cursor = collection.find(new BasicDBObject("searchString", searchString));
+		
+		try {
+			while(cursor.hasNext()) {
+				entityMap = cursor.next();
+				System.out.println(gson.toJson(entityMap));
+			}
+		} finally {
+			mongoWriter.close();
+		}
+	}
+	
 	private static void printSearchMap(String searchString) {
 		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		
@@ -184,7 +278,7 @@ public class Main {
 		MongoWriter mongoWriter = newMongoWriter();
 		
 		
-		collection = mongoWriter.getEntityMappingsCollection();
+		collection = mongoWriter.getSearchMapsCollection();
 		cursor = collection.find(new BasicDBObject("searchString", searchString));
 		
 		try {
@@ -207,7 +301,7 @@ public class Main {
 		
 		MongoWriter mongoWriter = newMongoWriter();
 		
-		collection = mongoWriter.getEntityMappingsCollection();
+		collection = mongoWriter.getSearchMapsCollection();
 		cursor = collection.find(new BasicDBObject());
 		
 		System.out.println(collection.count());
@@ -309,27 +403,33 @@ public class Main {
 	
 	/** */
 	public static void main(String[] args) {
-		
-		/* Operator calls */
-		// preprocessQueryLogs();
-		// sampleFiles("input/yago/tsv");
-		
-		// getYagoEntities();
-		
-		// getYagoHierarchy();
-		// mapYagoHierarchyToEntities();
-		
-		// mapQueries();
-		
-		
+				
 		/* Data inspection methods */
 		// mongoDBQueryPerformanceTest();
 		// printEntities();
+		// printEntities("java");
 		// printClasses();
-		printClassMembers("<wordnet_bishop_109857200>");
+		// printClass("<wordnet_bishop_109857200>");
+		// printClassMembers("<wordnet_bishop_109857200>");
 		// printSearchMaps();
 		// printSearchMap("indonesia");
-
+		
+		/* Operator calls */
+		// preprocessQueryLogs();
+		// getYagoEntities();
+		// getYagoHierarchy();
+		// augmentClassesWithNId();
+		// mapYagoHierarchyToEntities();
+		
+		// mapQueries();
+		// cacheValidSearchStrings();
+		// cacheSearchStringsToClasses();
+		//clusterSearchSessions(SessionToClassMapping.MODE_FULL_MAPPINGS);
+		// clusterSearchSessions(SessionToClassMapping.MODE_PARTIAL_MAPPINGS);
+		clusterSearchSessions(SessionToClassMapping.MODE_SESSION_IDS);
+		
+		/* Utility methods */
+		// sampleFiles("input/yago/tsv");
 		
 	}
 	
