@@ -201,22 +201,17 @@ public class Main {
 	 * Currently takes the output of mapQueries() as input to avoid re-matching the substrings
 	 * from query logs to mongoDB entity entries, which is very computationally and I/O-expensive
 	 */
-	private static void clusterSearchSessions(String mode) {
+	private static void findUsefulSearchSessions() {
 		
 		MongoWriter mongoWriter = newMongoWriter();
-		SessionClusterer sessionClusterer;
-		/*
-		sessionClusterer = new SessionClusterer(mongoWriter, SessionToClassMapping.MODE_FULL_MAPPINGS);
-		sessionClusterer.run();
-		
-		sessionClusterer = new SessionClusterer(mongoWriter, SessionToClassMapping.MODE_PARTIAL_MAPPINGS);
-		sessionClusterer.run();
-		
-		sessionClusterer = new SessionClusterer(mongoWriter, SessionToClassMapping.MODE_SESSION_IDS);
-		sessionClusterer.run();
-		*/
-		sessionClusterer = new SessionClusterer(mongoWriter, mode);
-		sessionClusterer.run();
+		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
+		sessionClusterer.findUsefulSessions();
+	}
+	
+	private static void clusterSearchSessions() {
+		MongoWriter mongoWriter = newMongoWriter();
+		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
+		sessionClusterer.clusterSessions();
 	}
 	
 	private static void printEntities() {
@@ -408,7 +403,7 @@ public class Main {
 		/* Data inspection methods */
 		// mongoDBQueryPerformanceTest();
 		// printEntities();
-		// printEntities("java");
+		// printEntities("scala");
 		// printClasses();
 		// printClass("<wordnet_bishop_109857200>");
 		// printClassMembers("<wordnet_bishop_109857200>");
@@ -422,12 +417,11 @@ public class Main {
 		// augmentClassesWithNId();
 		// mapYagoHierarchyToEntities();
 		
-		// mapQueries();
+		// mapQueries(); // Deprecated
 		// cacheValidSearchStrings();
 		// cacheSearchStringsToClasses();
-		// clusterSearchSessions(SessionToClassMapping.MODE_FULL_MAPPINGS);
-		// clusterSearchSessions(SessionToClassMapping.MODE_PARTIAL_MAPPINGS);
-		clusterSearchSessions(SessionToClassMapping.MODE_SESSION_IDS);
+		findUsefulSearchSessions();
+		// clusterSearchSessions();
 		
 		/* Utility methods */
 		// sampleFiles("input/yago/tsv");

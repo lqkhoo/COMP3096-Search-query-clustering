@@ -26,6 +26,7 @@ public class MongoWriter {
 	private DBCollection entities;
 	private DBCollection classes;
 	private DBCollection classMemberArrays;
+	@Deprecated
 	private DBCollection searchMaps;
 	private DBCollection usefulSessions;
 	
@@ -330,7 +331,7 @@ public class MongoWriter {
 		setFields.put("searchStrings", searchStrings);
 		setOperator.put("$set", setFields);
 		
-		this.usefulSessions.update(selector, setOperator, false, false);
+		this.usefulSessions.update(selector, setOperator, true, false);
 	}
 	
 	/*
@@ -389,10 +390,14 @@ public class MongoWriter {
 		return this.classMemberArrays;
 	}
 	
+	@Deprecated
 	public DBCollection getSearchMapsCollection() {
 		return this.searchMaps;
 	}
 	
+	public DBCollection getUsefulSessionsCollection() {
+		return this.usefulSessions;
+	}
 	
 	// Document methods
 	public DBObject getOneEntity(BasicDBObject criteria) {

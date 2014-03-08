@@ -8,6 +8,7 @@ import gnu.trove.set.hash.TIntHashSet;
  * Model of mapping strength between session and class. Used by SessionToClassMapping
  * @author Li Quan Khoo
  */
+@Deprecated
 public class SessionFullMapping {
 	
 	public final String className;

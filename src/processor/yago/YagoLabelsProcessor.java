@@ -12,6 +12,7 @@ import writer.MongoWriter;
  * Specialized processor for the yago file "yagoLabels"
  * @author Li Quan Khoo
  */
+@Deprecated
 public class YagoLabelsProcessor extends AYagoProcessor {
 	
 	public YagoLabelsProcessor(MongoWriter mongoWriter, String inputFilePath, String inputFileType) {

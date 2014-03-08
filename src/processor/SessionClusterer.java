@@ -7,9 +7,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import lib.Stemmer;
 import model.SearchSessionSerial;
+import model.SemanticSession;
 import model.SessionSearchStringMapping;
 
 import reader.DBCacheReader;
@@ -17,6 +19,11 @@ import reader.PreprocessedLogReader;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
 import writer.BatchFileWriter;
 import writer.MongoWriter;
@@ -39,7 +46,7 @@ public class SessionClusterer {
 	private BatchFileWriter batchFileWriter;
 	
 	private Stemmer stemmer;
-	private HashMap<String, String> stopwords;
+	private HashSet<String> stopwords;
 	
 	// Maps searchString to a list of their class nIds
 	private HashMap<String, int[]> searchStringMap = new HashMap<String, int[]>();
@@ -50,7 +57,7 @@ public class SessionClusterer {
 	
 	long prevReportTime = System.currentTimeMillis();
 	
-	public SessionClusterer(MongoWriter mongoWriter, String sessionMapMode) {
+	public SessionClusterer(MongoWriter mongoWriter) {
 		this.logReader = new PreprocessedLogReader();
 		this.mongoWriter = mongoWriter;
 		this.stemmer = new Stemmer();
@@ -59,7 +66,7 @@ public class SessionClusterer {
 	}
 	
 	private void initStopwords() {
-		this.stopwords = new HashMap<String, String>();
+		this.stopwords = new HashSet<String>();
 		
 		File inputFile = new File(DEFAULT_STOPWORDS_INPUT_FILE_PATH);
 		try {
@@ -70,7 +77,7 @@ public class SessionClusterer {
 			String word = null;
 			while(line != null) {
 				word = line.replaceAll("[\n\r]", "");
-				stopwords.put(word, "");
+				stopwords.add(word);
 				line = br.readLine();
 			}
 			br.close();
@@ -83,14 +90,41 @@ public class SessionClusterer {
 	}
 	
 	/**
+	 * First of two runnable methods. This identifies sessions which contain more than one valid
+	 *   searchString and puts them into MongoDB.
+	 * 
 	 * Loads relevant MongoDB data into RAM for performance reasons and then processes sessions.
-	 * Finally, it records the new data into MongoDB
 	 */
-	public void run() {
+	public void findUsefulSessions() {
 		loadSearchStringsToClassMappingsFromFile();
 		processSessions();
-		// sessionMapToFile();	// uncomment this line if you want file output alongside db output
+		usefulSessionsToFile();	// uncomment this line if you want file output alongside db output
 		usefulSessionsToDB();
+	}
+	
+	/**
+	 * The second of two runnable methods. This clusters sessions
+	 */
+	public void clusterSessions() {
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		DBCollection usefulSessions = this.mongoWriter.getUsefulSessionsCollection();
+		DBCursor cursor;
+		DBObject session;
+		int sessionId;
+		BasicDBList searchStrings;
+		
+		cursor = usefulSessions.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			session = cursor.next();
+			sessionId = (Integer) session.get("sessionId");
+			searchStrings = (BasicDBList) session.get("searchStrings");
+			
+			System.out.println(gson.toJson(new SemanticSession(sessionId, searchStrings.toArray(new String[]{}), this.mongoWriter)));
+			// testing only
+			break;
+			
+		}
 	}
 	
 	/**
@@ -138,17 +172,21 @@ public class SessionClusterer {
 					for(int i = 0; i < substrings.size(); i++) {
 						
 						substring = substrings.get(i);
-						if(this.searchStringMap.containsKey(substring)) {
-							validSearchStrings.put(substring, true);
-							removeSubstrings(substrings, substring);
-							
-						} else {
-							stemmedSearchString = stemQueryString(substring);
-							if(this.searchStringMap.containsKey(stemmedSearchString)) {
-								validSearchStrings.put(stemmedSearchString, true);
-								removeSubstrings(substrings, substring); // remove the originals, not the stemmed ones
-							}
-						} // else do nothing
+						if(! this.stopwords.contains(substring)) {
+							if(this.searchStringMap.containsKey(substring)) {
+								validSearchStrings.put(substring, true);
+								removeSubstrings(substrings, substring);
+								
+							} else {
+								stemmedSearchString = stemQueryString(substring);
+								if(! this.stopwords.contains(substring)) {
+									if(this.searchStringMap.containsKey(stemmedSearchString)) {
+										validSearchStrings.put(stemmedSearchString, true);
+										removeSubstrings(substrings, substring); // remove the originals, not the stemmed ones
+									}
+								}
+							} // else do nothing
+						}
 					}
 					
 					this.sessionMap.put(sessionId, validSearchStrings.keySet().toArray(new String[]{}));
@@ -156,11 +194,12 @@ public class SessionClusterer {
 				}
 				reportSessionsProcessed(++sessionsProcessed);
 			}
-			/*	test stuff
+			/* test stuff with just one file ---
 			if(sessionsProcessed >= 100000) {
 				break;
 			}
 			*/
+			
 			sessions = logReader.getLogs();
 		}
 		
@@ -170,23 +209,23 @@ public class SessionClusterer {
 		String[] searchStrings;
 		
 		int sessionsWritten = 0;
-		
-		this.batchFileWriter = new BatchFileWriter("output/clusterer-out/sessions", "json");
-		this.batchFileWriter.deleteFilesInDir();
+		// WARNING: drops previous data before running in case sessionIds get adjusted to avoid duplicates
+		this.mongoWriter.getUsefulSessionsCollection().drop();
 		
 		for(int sessionId : this.sessionMap.keySet().toArray(new Integer[]{})) {
 			searchStrings = this.sessionMap.get(sessionId);
 			
 			// set to != 0 to include sessions with only one searchString match
+			
 			if(searchStrings.length > 1) {
 				this.mongoWriter.addOrUpdateUsefulSession(sessionId, searchStrings);
+				reportSessionsWrittenToDb(++sessionsWritten);
 			}
 			
-			reportSessionsWrittenToDb(++sessionsWritten);
 		}
 	}
 	
-	private void sessionMapToFile() {
+	private void usefulSessionsToFile() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		
 		int listLength = 0;
@@ -200,7 +239,7 @@ public class SessionClusterer {
 		for(int sessionId : this.sessionMap.keySet().toArray(new Integer[]{})) {
 			searchStrings = this.sessionMap.get(sessionId);
 			
-			if(searchStrings.length != 0) {
+			if(searchStrings.length > 1) {
 				mappings.add(new SessionSearchStringMapping(sessionId, this.sessionMap.get(sessionId)));
 				listLength++;
 				
@@ -282,7 +321,7 @@ public class SessionClusterer {
 		
 		String[] tokens = queryString.split(" ");
 		for(String token : tokens) {
-			if(! this.stopwords.containsKey(token)) {
+			if(! this.stopwords.contains(token)) {
 				
 				this.stemmer = new Stemmer();
 				charArray = token.toCharArray();
