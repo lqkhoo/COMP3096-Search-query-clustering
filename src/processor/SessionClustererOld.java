@@ -7,18 +7,23 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import lib.Stemmer;
 import model.SearchSessionSerial;
-import model.SessionSearchStringMapping;
+import model.SessionToClassMapping;
 
 import reader.DBCacheReader;
 import reader.PreprocessedLogReader;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
-import writer.BatchFileWriter;
 import writer.MongoWriter;
 
 /**
@@ -30,31 +35,32 @@ import writer.MongoWriter;
  * @author Li Quan Khoo
  *
  */
-public class SessionClusterer {
+@Deprecated
+public class SessionClustererOld {
 	
 	public static final String DEFAULT_STOPWORDS_INPUT_FILE_PATH = "src/config/stopwords.ini";
 	
 	private PreprocessedLogReader logReader;
 	private MongoWriter mongoWriter;
-	private BatchFileWriter batchFileWriter;
-	
 	private Stemmer stemmer;
 	private HashMap<String, String> stopwords;
 	
 	// Maps searchString to a list of their class nIds
 	private HashMap<String, int[]> searchStringMap = new HashMap<String, int[]>();
 	
+	// Maps entity names to names of their classes
+	private HashMap<String, String[]> entityClassMap = new HashMap<String, String[]>(); 
+	
 	// Maps classes with sessionIds, taking into account mapping strength
-	//private SessionToClassMapping sessionMap;
-	private HashMap<Integer, String[]> sessionMap;
+	private SessionToClassMapping sessionMap;
 	
 	long prevReportTime = System.currentTimeMillis();
 	
-	public SessionClusterer(MongoWriter mongoWriter, String sessionMapMode) {
+	public SessionClustererOld(MongoWriter mongoWriter, String sessionMapMode) {
 		this.logReader = new PreprocessedLogReader();
 		this.mongoWriter = mongoWriter;
 		this.stemmer = new Stemmer();
-		this.sessionMap = new HashMap<Integer, String[]>();
+		this.sessionMap = new SessionToClassMapping(this.mongoWriter, sessionMapMode);
 		initStopwords();
 	}
 	
@@ -87,16 +93,40 @@ public class SessionClusterer {
 	 * Finally, it records the new data into MongoDB
 	 */
 	public void run() {
-		loadSearchStringsToClassMappingsFromFile();
+		loadEntitiesFromFile();
+		// loadClasses();
 		processSessions();
-		// sessionMapToFile();	// uncomment this line if you want file output alongside db output
-		usefulSessionsToDB();
+		toDB();
 	}
 	
 	/**
-	 * Loads the entitiesToClassIds output from DBCacher
+	 * Load classes into memory. This initializes entityClassMap
 	 */
-	private void loadSearchStringsToClassMappingsFromFile() {
+	private void loadClasses() {
+		
+		DBCollection classes;
+		DBObject cls;
+		DBCursor cursor;
+		String className;
+		
+		int classesProcessed = 0;
+		
+		classes = this.mongoWriter.getClassesCollection();
+		cursor = classes.find(new BasicDBObject());
+		
+		while(cursor.hasNext()) {
+			cls = cursor.next();
+			className = (String) cls.get("name");
+			sessionMap.registerClass(className);
+			
+			reportClassesProcessed(++classesProcessed);
+		}
+	}
+	
+	/**
+	 * 
+	 */
+	private void loadEntitiesFromFile() {
 		DBCacheReader cacheReader = new DBCacheReader();
 		this.searchStringMap = cacheReader.readSearchStringToClassMappings();
 	}
@@ -107,12 +137,14 @@ public class SessionClusterer {
 	 */
 	private void processSessions() {
 		
+		DBCollection entities = this.mongoWriter.getEntitiesCollection();
 		int sessionId;
 		ArrayList<String> substrings;	// substrings formed from whole query string
 		String stemmedSearchString;
 		String substring;
 		HashMap<String, Boolean> processedQueriesInSession;
 		HashMap<String, Boolean> validSearchStrings;
+		boolean isFullMatch;
 		
 		int sessionsProcessed = 0;
 		
@@ -136,22 +168,27 @@ public class SessionClusterer {
 					
 					// for each query substring
 					for(int i = 0; i < substrings.size(); i++) {
+						isFullMatch = (i == 0) ? true : false;
 						
 						substring = substrings.get(i);
+						//if(entities.find(new BasicDBObject("searchString", substring)).hasNext()) {
 						if(this.searchStringMap.containsKey(substring)) {
 							validSearchStrings.put(substring, true);
+							updateSessionMap(substring, isFullMatch, sessionId);
 							removeSubstrings(substrings, substring);
 							
 						} else {
 							stemmedSearchString = stemQueryString(substring);
+							//if(entities.find(new BasicDBObject("searchString", stemmedSearchString)).hasNext()) {
 							if(this.searchStringMap.containsKey(stemmedSearchString)) {
 								validSearchStrings.put(stemmedSearchString, true);
+								updateSessionMap(stemmedSearchString, isFullMatch, sessionId);
 								removeSubstrings(substrings, substring); // remove the originals, not the stemmed ones
 							}
 						} // else do nothing
 					}
 					
-					this.sessionMap.put(sessionId, validSearchStrings.keySet().toArray(new String[]{}));
+					this.sessionMap.setSessionIdMapping(sessionId, validSearchStrings.keySet().toArray(new String[]{}));
 					
 				}
 				reportSessionsProcessed(++sessionsProcessed);
@@ -165,56 +202,13 @@ public class SessionClusterer {
 		}
 		
 	}
-		
-	private void usefulSessionsToDB() {
-		String[] searchStrings;
-		
-		int sessionsWritten = 0;
-		
-		this.batchFileWriter = new BatchFileWriter("output/clusterer-out/sessions", "json");
-		this.batchFileWriter.deleteFilesInDir();
-		
-		for(int sessionId : this.sessionMap.keySet().toArray(new Integer[]{})) {
-			searchStrings = this.sessionMap.get(sessionId);
-			
-			// set to != 0 to include sessions with only one searchString match
-			if(searchStrings.length > 1) {
-				this.mongoWriter.addOrUpdateUsefulSession(sessionId, searchStrings);
-			}
-			
-			reportSessionsWrittenToDb(++sessionsWritten);
-		}
+	
+	private void toDB() {
+		this.sessionMap.toDB();
 	}
 	
-	private void sessionMapToFile() {
-		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-		
-		int listLength = 0;
-		ArrayList<SessionSearchStringMapping> mappings;
-		String[] searchStrings;
-		
-		this.batchFileWriter = new BatchFileWriter("output/clusterer-out/sessions", "json");
-		this.batchFileWriter.deleteFilesInDir();
-		
-		mappings = new ArrayList<SessionSearchStringMapping>();
-		for(int sessionId : this.sessionMap.keySet().toArray(new Integer[]{})) {
-			searchStrings = this.sessionMap.get(sessionId);
-			
-			if(searchStrings.length != 0) {
-				mappings.add(new SessionSearchStringMapping(sessionId, this.sessionMap.get(sessionId)));
-				listLength++;
-				
-				if(listLength % 1000000 == 0) {
-					this.batchFileWriter.writeToFile(gson.toJson(mappings), "sessionMapping");
-					mappings = new ArrayList<SessionSearchStringMapping>();
-				}
-			}
-			// mappings.add(new SessionSearchStringMapping(className, this.sessionIdMap.get(className)));
-		}
-		
-		if(mappings.size() != 0) {
-			this.batchFileWriter.writeToFile(gson.toJson(mappings), "sessionMapping");
-		}
+	private void toFile() {
+		this.sessionMap.toFile();
 	}
 	
 	/**
@@ -296,21 +290,56 @@ public class SessionClusterer {
 			}
 		}
 		return output;
-	}	
+	}
+	
+	/**
+	 * Updates sessionMap with appropriate data given a substring of the query string and the sessionId in question
+	 * @param substring
+	 * @param sessionId
+	 */
+	private void updateSessionMap(String substring, boolean isFullMatch, int sessionId) {
+		DBObject entity;
+		BasicDBObject entityRelations;
+		BasicDBList entityClasses;
+		String entityClassName;
+		
+		
+		DBCollection entities = this.mongoWriter.getEntitiesCollection();
+		DBCursor cursor;
+		
+		cursor = entities.find(new BasicDBObject("searchString", substring));
+		while(cursor.hasNext()) {
+			entity = cursor.next();
+			entityRelations = (BasicDBObject) entity.get("relations");
+			if(entityRelations != null) {
+				entityClasses = (BasicDBList) entityRelations.get("rdf:type");
+				if(entityClasses != null) {
+					for(int j = 0; j < entityClasses.size(); j++) {
+						entityClassName = (String) entityClasses.get(j);
+						sessionMap.strengthenRelation(entityClassName, sessionId, isFullMatch);
+					}
+				}
+			}
+		}
+	}
+		
+	private void reportEntitiesProcessed(int entitiesProcessed) {
+		if(entitiesProcessed % 50000 == 0) {
+			System.out.println("SessionClusterer: Entities processed: " + entitiesProcessed / 1000 + "k entities.");
+		}
+	}
+	
+	private void reportClassesProcessed(int classesProcessed) {
+		if(classesProcessed % 50000 == 0) {
+			System.out.println("SessionClusterer: Classes processed: " + classesProcessed / 1000 + "k entities.");
+		}
+	}
 	
 	private void reportSessionsProcessed(int sessionsProcessed) {
 		if(sessionsProcessed % 10000 == 0) {
 			long duration = (System.currentTimeMillis() - prevReportTime) / 1000;
 			prevReportTime = System.currentTimeMillis();
 			System.out.println("SessionClusterer: Sessions processed: " + sessionsProcessed / 1000 + "k entities. (" + duration + " s)");
-		}
-	}
-	
-	private void reportSessionsWrittenToDb(int sessionsWritten) {
-		if(sessionsWritten % 10000 == 0) {
-			long duration = (System.currentTimeMillis() - prevReportTime) / 1000;
-			prevReportTime = System.currentTimeMillis();
-			System.out.println("SessionClusterer: Sessions written: " + sessionsWritten / 1000 + "k entities. (" + duration + " s)");
 		}
 	}
 	

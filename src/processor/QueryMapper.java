@@ -22,6 +22,7 @@ import writer.MongoWriter;
  * Writes query string mappings to the MongoDB collection called queryMap
  * @author Li Quan Khoo
  */
+@Deprecated
 public class QueryMapper {
 	
 	public static final String DEFAULT_STOPWORDS_INPUT_FILE_PATH = "src/config/stopwords.ini";

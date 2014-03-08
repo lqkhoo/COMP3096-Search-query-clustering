@@ -176,6 +176,7 @@ public class Main {
 	 *   
 	 * Expected runtime: 24 - 36 hours (Core i7 2GHz)
 	 */
+	@Deprecated
 	private static void mapQueries() {
 		MongoWriter mongoWriter = newMongoWriter();
 		QueryMapper queryMapper = new QueryMapper(mongoWriter);
@@ -424,7 +425,7 @@ public class Main {
 		// mapQueries();
 		// cacheValidSearchStrings();
 		// cacheSearchStringsToClasses();
-		//clusterSearchSessions(SessionToClassMapping.MODE_FULL_MAPPINGS);
+		// clusterSearchSessions(SessionToClassMapping.MODE_FULL_MAPPINGS);
 		// clusterSearchSessions(SessionToClassMapping.MODE_PARTIAL_MAPPINGS);
 		clusterSearchSessions(SessionToClassMapping.MODE_SESSION_IDS);
 		

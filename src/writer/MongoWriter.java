@@ -27,6 +27,7 @@ public class MongoWriter {
 	private DBCollection classes;
 	private DBCollection classMemberArrays;
 	private DBCollection searchMaps;
+	private DBCollection usefulSessions;
 	
 	private long updateCount = 0;
 	private long prevTime = System.currentTimeMillis();
@@ -40,26 +41,26 @@ public class MongoWriter {
 			
 			/* This collection stores Yago2 entities */
 			this.entities = db.getCollection("entities");
-			
-			/* This collection stores Yago2 class hierarchy information and a list of id references to the classMemberArrays collection */
-			this.classes = db.getCollection("classes");
-			
-			/* This collection stores entity class membership information within arrays to work around the 16Mb mongodb document size limit */
-			this.classMemberArrays = db.getCollection("classMemberArrays");
-			
-			/* This collection stores string to string query clusters */
-			this.searchMaps = db.getCollection("searchMaps");
-			
 			this.entities.ensureIndex(new BasicDBObject("name", 1));
 			this.entities.ensureIndex(new BasicDBObject("cleanName", 1));
 			this.entities.ensureIndex(new BasicDBObject("searchString", 1));
 			
+			/* This collection stores Yago2 class hierarchy information and a list of id references to the classMemberArrays collection */
+			this.classes = db.getCollection("classes");
 			this.classes.ensureIndex(new BasicDBObject("name", 1));
 			this.classes.ensureIndex(new BasicDBObject("nId", 1));
 			
+			/* This collection stores entity class membership information within arrays to work around the 16Mb mongodb document size limit */
+			this.classMemberArrays = db.getCollection("classMemberArrays");
 			this.classMemberArrays.ensureIndex(new BasicDBObject("id", 1));
 			
+			/* This collection stores string to string query clusters */
+			this.searchMaps = db.getCollection("searchMaps");
 			this.searchMaps.ensureIndex(new BasicDBObject("searchString", 1));
+			
+			/* These are AOL log search sessions mapping to more than one valid searchString */
+			this.usefulSessions = db.getCollection("usefulSessions");
+			this.usefulSessions.ensureIndex(new BasicDBObject("sessionId", 1));
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -265,7 +266,7 @@ public class MongoWriter {
 		BasicDBObject setOperator = new BasicDBObject();
 		BasicDBObject setFields = new BasicDBObject();
 		
-		setFields = new BasicDBObject("nId", nId);
+		setFields.put("nId", nId);
 		setOperator.put("$set", setFields);
 		
 		this.classes.update(selector, setOperator, false, false);
@@ -318,6 +319,18 @@ public class MongoWriter {
 			this.prevTime = this.currentTime;
 			System.out.println("MongoWriter: " + this.updateCount / 1000 + "k transactions (" + seconds + "s)");
 		}
+	}
+	
+	public void addOrUpdateUsefulSession(int sessionId, String[] searchStrings) {
+		BasicDBObject selector = new BasicDBObject("sessionId", sessionId);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		setFields.put("sessionId", sessionId);
+		setFields.put("searchStrings", searchStrings);
+		setOperator.put("$set", setFields);
+		
+		this.usefulSessions.update(selector, setOperator, false, false);
 	}
 	
 	/*

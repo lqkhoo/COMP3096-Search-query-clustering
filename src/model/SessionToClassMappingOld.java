@@ -16,7 +16,7 @@ import writer.MongoWriter;
  *
  */
 @Deprecated
-public class SessionToClassMapping {
+public class SessionToClassMappingOld {
 	
 	public static final String MODE_PARTIAL_MAPPINGS = "partial";
 	public static final String MODE_FULL_MAPPINGS = "full";
@@ -31,7 +31,7 @@ public class SessionToClassMapping {
 	
 	private BatchFileWriter batchFileWriter;
 	
-	public SessionToClassMapping(MongoWriter mongoWriter, String mode) {
+	public SessionToClassMappingOld(MongoWriter mongoWriter, String mode) {
 		this.mongoWriter = mongoWriter;
 		this.mode = mode;
 		this.partial = new HashMap<String, HashMap<Integer, Integer>>();
