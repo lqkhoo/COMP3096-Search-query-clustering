@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 import lib.Stemmer;
+import model.EntityToClassMapping;
 import model.SearchSessionSerial;
 import model.SemanticSession;
 import model.SessionSearchStringMapping;
@@ -52,7 +53,7 @@ public class SessionClusterer {
 	private HashMap<String, int[]> searchStringMap = new HashMap<String, int[]>();
 	
 	// Maps classes with sessionIds, taking into account mapping strength
-	//private SessionToClassMapping sessionMap;
+	// private SessionToClassMapping sessionMap;
 	private HashMap<Integer, String[]> sessionMap;
 	
 	long prevReportTime = System.currentTimeMillis();
@@ -90,7 +91,7 @@ public class SessionClusterer {
 	}
 	
 	/**
-	 * First of two runnable methods. This identifies sessions which contain more than one valid
+	 * First runnable method. This identifies sessions which contain more than one valid
 	 *   searchString and puts them into MongoDB.
 	 * 
 	 * Loads relevant MongoDB data into RAM for performance reasons and then processes sessions.
@@ -98,21 +99,29 @@ public class SessionClusterer {
 	public void findUsefulSessions() {
 		loadSearchStringsToClassMappingsFromFile();
 		processSessions();
-		usefulSessionsToFile();	// uncomment this line if you want file output alongside db output
+		// usefulSessionsToFile();	// uncomment this line if you want file output alongside db output
 		usefulSessionsToDB();
 	}
 	
 	/**
-	 * The second of two runnable methods. This clusters sessions
+	 * Second runnable method. This augments sessions with the entities which are most likely being searched for etc.
+	 * 
+	 * Runtime: ~ minutes to ~ 2 hours depending on similarityThreshold. The bigger the faster.
 	 */
-	public void clusterSessions() {
-		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+	public void deriveSessionSemantics(double similarityThreshold) {
+		// Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		
 		DBCollection usefulSessions = this.mongoWriter.getUsefulSessionsCollection();
 		DBCursor cursor;
 		DBObject session;
 		int sessionId;
 		BasicDBList searchStrings;
+		SemanticSession semanticSession;
+		
+		int sessionsProcessed = 0;
+		
+		// Test session with 4 searchStrings
+		// cursor = usefulSessions.find(new BasicDBObject("sessionId", 3925986));
 		
 		cursor = usefulSessions.find(new BasicDBObject());
 		while(cursor.hasNext()) {
@@ -120,12 +129,93 @@ public class SessionClusterer {
 			sessionId = (Integer) session.get("sessionId");
 			searchStrings = (BasicDBList) session.get("searchStrings");
 			
-			System.out.println(gson.toJson(new SemanticSession(sessionId, searchStrings.toArray(new String[]{}), this.mongoWriter)));
-			// testing only
-			break;
+			semanticSession = new SemanticSession(sessionId, searchStrings.toArray(new String[]{}), similarityThreshold, this.mongoWriter);
 			
+			// System.out.println(gson.toJson(semanticSession));
+			
+			this.mongoWriter.addSemanticSession(semanticSession, similarityThreshold);
+			
+			// System.out.println(gson.toJson(this.mongoWriter.getSemanticSessionsCollection().findOne(new BasicDBObject("sessionId", sessionId))));
+			
+			// testing only -- process one usefulSession
+			// break;
+			reportSessionsProcessed(++sessionsProcessed);
 		}
 	}
+	
+	/**
+	 * Third runnable method. This classifies the semantic sessions under yago classes
+	 */
+	public void clusterSessions() {
+		// Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		// Hash of entity names against their mappings to semantic sessions (their sessionIds)
+		HashMap<String, EntityToClassMapping> map = new HashMap<String, EntityToClassMapping>();
+		
+		DBCollection semanticSessions = this.mongoWriter.getSemanticSessionsCollection();
+		
+		DBCursor cursor;
+		DBObject semanticSession;
+		BasicDBList similarities;
+		BasicDBObject similarityObj;
+		int sessionId;
+		String entity1Name;
+		String entity1SearchString;
+		String entity2Name;
+		String entity2SearchString;
+		double similarity;
+		
+		EntityToClassMapping mapping;
+		
+		int sessionsProcessed = 0;
+		
+		System.out.println("SessionClusterer: Clustering sessions.");
+		cursor = semanticSessions.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			semanticSession = cursor.next();
+			similarities = (BasicDBList) semanticSession.get("similarities");
+			sessionId = (Integer) semanticSession.get("sessionId");
+			if(similarities != null) {
+				for(int i = 0; i < similarities.size(); i++) {
+					similarityObj = (BasicDBObject) similarities.get(i);
+					if(similarityObj != null) {
+						
+						similarity = (Double) similarityObj.get("similarity");
+						entity1Name = (String) similarityObj.get("entity1");
+						entity1SearchString = (String) similarityObj.get("entity1SearchString");
+						entity2Name = (String) similarityObj.get("entity2");
+						entity2SearchString = (String) similarityObj.get("entity2SearchString");
+						
+						if(! map.containsKey(entity1Name)) {
+							map.put(entity1Name, new EntityToClassMapping(entity1Name, entity1SearchString));
+						}
+						if(! map.containsKey(entity2Name)) {
+							map.put(entity2Name, new EntityToClassMapping(entity2Name, entity2SearchString));
+						}
+						
+						map.get(entity1Name).addMapping(sessionId, similarity);
+						
+					}
+				}
+			}
+			
+			reportSessionsProcessed(++sessionsProcessed);
+			// System.out.println(gson.toJson(semanticSession));
+			
+		}
+		
+		sessionsProcessed = 0;
+		System.out.println("SessionClusterer: Writing to database.");
+		// write to db
+		for(String key : map.keySet()) {
+			mapping = map.get(key);
+			mapping.sortMappings();	// Sort mappings before insertion
+			this.mongoWriter.addSessionCluster(mapping);
+			
+			reportSessionsProcessed(++sessionsProcessed);
+		}
+	}
+	
 	
 	/**
 	 * Loads the entitiesToClassIds output from DBCacher
@@ -172,21 +262,19 @@ public class SessionClusterer {
 					for(int i = 0; i < substrings.size(); i++) {
 						
 						substring = substrings.get(i);
-						if(! this.stopwords.contains(substring)) {
-							if(this.searchStringMap.containsKey(substring)) {
-								validSearchStrings.put(substring, true);
-								removeSubstrings(substrings, substring);
-								
-							} else {
-								stemmedSearchString = stemQueryString(substring);
-								if(! this.stopwords.contains(substring)) {
-									if(this.searchStringMap.containsKey(stemmedSearchString)) {
-										validSearchStrings.put(stemmedSearchString, true);
-										removeSubstrings(substrings, substring); // remove the originals, not the stemmed ones
-									}
-								}
-							} // else do nothing
-						}
+						if(! this.stopwords.contains(substring)
+								&& this.searchStringMap.containsKey(substring)) {
+							validSearchStrings.put(substring, true);
+							removeSubstrings(substrings, substring);
+							
+						} else {
+							stemmedSearchString = stemQueryString(substring);
+							if(! this.stopwords.contains(stemmedSearchString)
+									&& this.searchStringMap.containsKey(stemmedSearchString)) {
+								validSearchStrings.put(stemmedSearchString, true);
+								removeSubstrings(substrings, substring); // remove the originals, not the stemmed ones
+							}
+						} // else do nothing
 					}
 					
 					this.sessionMap.put(sessionId, validSearchStrings.keySet().toArray(new String[]{}));
@@ -204,7 +292,7 @@ public class SessionClusterer {
 		}
 		
 	}
-		
+	
 	private void usefulSessionsToDB() {
 		String[] searchStrings;
 		
@@ -269,7 +357,7 @@ public class SessionClusterer {
 		
 		// degenerate
 		if(query.equals("") || query == null) {
-			new ArrayList<String>();
+			return substrings;
 		}
 		
 		//          0     1     2     3

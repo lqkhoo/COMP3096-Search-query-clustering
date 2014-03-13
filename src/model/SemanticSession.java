@@ -22,19 +22,23 @@ import writer.MongoWriter;
 public class SemanticSession {
 	
 	private transient MongoWriter mongoWriter;
-		
+	
 	public final int sessionId;
-	private String[] searchStrings;	// valid searchStrings found within this session
+	public final double similarityThreshold;	// The minimum similarity between similarities for them to be recorded into the DB.
+												// If no pair of entities have similarities >= similarityThreshold, then session is not recorded into DB.
+	private String[] searchStrings;				// valid searchStrings found within this session
+	private String[] searchStringsUnqualified;	// searchStrings of which none of the entities >= similarityThreshold
 	
 	private transient HashMap<String, ArrayList<SemanticEntity>> entities;
 	private ArrayList<String> entityNames;
 	private ArrayList<Similarity> similarities;
 	//private Similarity[][] similarityMatrix;	// matrix representation not necessary and complicates serialization
 	
-	public SemanticSession(int sessionId, String[] searchStrings, MongoWriter mongoWriter) {
+	public SemanticSession(int sessionId, String[] searchStrings, double similarityThreshold, MongoWriter mongoWriter) {
 		this.mongoWriter = mongoWriter;
 		
 		this.sessionId = sessionId;
+		this.similarityThreshold = similarityThreshold;
 		this.searchStrings = searchStrings;
 		
 		this.entities = new HashMap<String, ArrayList<SemanticEntity>>();
@@ -61,7 +65,9 @@ public class SemanticSession {
 		Similarity similarity;
 		Set<String> commonClasses;
 		Set<String> commonLinks;
-				
+		
+		HashSet<String> unqualifiedSearchStrings;
+		
 		for(String searchString : this.searchStrings) {
 			
 			this.entities.put(searchString, new ArrayList<SemanticEntity>());
@@ -102,7 +108,7 @@ public class SemanticSession {
 			
 			for(int j = 0; j < searchStrings.length; j++) {
 				if(j >= i) {
-					break;	// handshake - compare each pair only once
+					break;	// handshake -- compare each pair only once
 				}
 				searchString2Entities = this.entities.get(searchStrings[j]);
 				
@@ -116,7 +122,8 @@ public class SemanticSession {
 						commonClasses.retainAll(entityY.classes);
 						commonLinks = new HashSet<String>(entityX.linksTo);
 						commonLinks.retainAll(entityY.linksTo);
-						similarity = new Similarity(entityX.entityName, entityY.entityName, commonClasses, commonLinks);
+						similarity = new Similarity(entityX.entityName, searchStrings[i],
+								entityY.entityName, searchStrings[j], commonClasses, commonLinks);
 						// this.similarityMatrix[x][y] = similarity;
 						// this.similarityMatrix[y][x] = similarity;
 						this.similarities.add(similarity);
@@ -127,6 +134,35 @@ public class SemanticSession {
 		}
 		Collections.sort(this.similarities);
 		
+		unqualifiedSearchStrings = new HashSet<String>(Arrays.asList(this.searchStrings));
+		for(int i = 0; i < this.similarities.size(); i++) {
+			similarity = similarities.get(i);
+			
+			if(similarity.similarity < this.similarityThreshold) {
+				break;
+			}
+			
+			unqualifiedSearchStrings.remove(similarity.entity1SearchString);
+			unqualifiedSearchStrings.remove(similarity.entity2SearchString);
+		}
+		this.searchStringsUnqualified = unqualifiedSearchStrings.toArray(new String[]{});
+		
+	}
+	
+	public String[] getSearchStrings() {
+		return this.searchStrings;
+	}
+	
+	public String[] getUnqualifiedSearchStrings() {
+		return this.searchStringsUnqualified;
+	}
+	
+	public String[] getEntityNames() {
+		return this.entityNames.toArray(new String[]{});
+	}
+	
+	public Similarity[] getSimilarities() {
+		return this.similarities.toArray(new Similarity[]{});
 	}
 	
 	// Private classes
@@ -147,65 +183,6 @@ public class SemanticSession {
 		
 	}
 	
-	private class Similarity implements Comparable<Similarity> {
-		
-		public static final double COMMON_CLASS_SCORE = 1;
-		public static final double COMMON_LINK_SCORE = 0.2;
-		
-		public final double similarity;
-		public final String entity1;
-		public final String entity2;
-		public final Set<String> commonClasses;
-		public final Set<String> commonLinks;
-		
-		public Similarity(String entity1, String entity2, Set<String> commonClasses, Set<String> commonLinks) {
-			this.entity1 = entity1;
-			this.entity2 = entity2;
-			this.commonClasses = commonClasses;
-			this.commonLinks = commonLinks;
-			this.similarity = commonClasses.size() * COMMON_CLASS_SCORE + commonLinks.size() * COMMON_LINK_SCORE;
-		}
 
-		@Override
-		public int compareTo(Similarity other) {
-			// sort in reverse order
-			if(this.similarity < other.similarity) {
-				return 1;
-			} else if(this.similarity > other.similarity) {
-				return -1;
-			}
-			return 0;
-		}
-		
-		/*
-		public int getSimilarity() {
-			return this.similarity;
-		}
-		
-		public int setSimilarity(int similarity) {
-			this.similarity = similarity;
-			return this.similarity;
-		}
-		
-		public Set<String> getCommonClasses() {
-			return this.commonClasses;
-		}
-		
-		public Set<String> setCommonClasses(Set<String> commonClasses) {
-			this.commonClasses = commonClasses;
-			return this.commonClasses;
-		}
-		
-		public Set<String> getCommonLinks() {
-			return this.commonClasses;
-		}
-		
-		public Set<String> setCommonLinks(Set<String> commonLinks) {
-			this.commonLinks = commonLinks;
-			return this.commonLinks;
-		}
-		*/
-		
-	}
 	
 }

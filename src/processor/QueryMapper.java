@@ -22,7 +22,6 @@ import writer.MongoWriter;
  * Writes query string mappings to the MongoDB collection called queryMap
  * @author Li Quan Khoo
  */
-@Deprecated
 public class QueryMapper {
 	
 	public static final String DEFAULT_STOPWORDS_INPUT_FILE_PATH = "src/config/stopwords.ini";
@@ -71,15 +70,15 @@ public class QueryMapper {
 	}
 	
 	private String[] generateQuerySubstrings(String query) {
-				
-		ArrayList<String> substrings = new ArrayList<String>();
-		String[] parts = query.split(" ");
-		String substring;
 		
 		// degenerate
 		if(query.equals("") || query == null) {
 			return new String[] {};
 		}
+		
+		ArrayList<String> substrings = new ArrayList<String>();
+		String[] parts = query.split(" ");
+		String substring;
 		
 		//          0     1     2     3
 		// String [***] [***] [***] [***]
@@ -135,7 +134,6 @@ public class QueryMapper {
 		if(entity != null) {
 			this.matchResultsCache.put(queryString, "");
 			return queryString;
-
 		} else {
 			this.noMatchCache.put(queryString, "");
 			return null;

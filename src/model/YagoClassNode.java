@@ -2,6 +2,10 @@ package model;
 
 import java.util.ArrayList;
 
+/**
+ * Object representing a Yago class within a YagoHierarchy instance
+ * @author Li Quan Khoo
+ */
 public class YagoClassNode {
 	
 	private String name;

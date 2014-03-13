@@ -8,6 +8,7 @@ import java.util.HashMap;
  * @author Li Quan Khoo
  *
  */
+@Deprecated
 public class SearchSessionHash extends ASearchSession {
 	
 	private HashMap<String, Integer> queries;

@@ -6,6 +6,10 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import model.EntityToClassMapping;
+import model.SemanticSession;
+import model.Similarity;
+
 import com.mongodb.BasicDBList;
 import com.mongodb.DBCursor;
 import com.mongodb.Mongo;
@@ -23,12 +27,15 @@ public class MongoWriter {
 	
 	private Mongo mongoClient;
 	private DB db;
+	
 	private DBCollection entities;
 	private DBCollection classes;
 	private DBCollection classMemberArrays;
 	@Deprecated
 	private DBCollection searchMaps;
 	private DBCollection usefulSessions;
+	private DBCollection semanticSessions;
+	private DBCollection sessionClusters;
 	
 	private long updateCount = 0;
 	private long prevTime = System.currentTimeMillis();
@@ -62,6 +69,16 @@ public class MongoWriter {
 			/* These are AOL log search sessions mapping to more than one valid searchString */
 			this.usefulSessions = db.getCollection("usefulSessions");
 			this.usefulSessions.ensureIndex(new BasicDBObject("sessionId", 1));
+			
+			/* These are the same as usefulSessions, but contain derived semantic content */
+			this.semanticSessions = db.getCollection("semanticSessions");
+			this.semanticSessions.ensureIndex(new BasicDBObject("sessionId", 1));
+			
+			/* Clusters are collections of sessionIds and similarity scores mapping to an entity */
+			this.sessionClusters = db.getCollection("sessionClusters");
+			this.sessionClusters.ensureIndex(new BasicDBObject("searchString", 1));
+			this.sessionClusters.ensureIndex(new BasicDBObject("entityName", 1));
+			
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -334,6 +351,66 @@ public class MongoWriter {
 		this.usefulSessions.update(selector, setOperator, true, false);
 	}
 	
+	/**
+	 * Adds a record to the semanticSession collection. The threshold is the minimum similarity required
+	 *   for the similarity object to be recorded. Default value should be 5.0
+	 * @param semanticSession
+	 * @param similarityThreshold
+	 */
+	public void addSemanticSession(SemanticSession semanticSession, double similarityThreshold) {
+		
+		BasicDBObject selector = new BasicDBObject("sessionId", semanticSession.sessionId);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		BasicDBList db_similarities = new BasicDBList();
+		BasicDBObject db_similarity;
+		
+		boolean maxExceedsThreshold = false;
+		
+		for(Similarity similarity : semanticSession.getSimilarities()) {
+			
+			if(similarity.similarity >= similarityThreshold) {
+				maxExceedsThreshold = true;
+				db_similarity = new BasicDBObject();
+				db_similarity.put("similarity", similarity.similarity);
+				db_similarity.put("entity1", similarity.entity1);
+				db_similarity.put("entity1SearchString", similarity.entity1SearchString);
+				db_similarity.put("entity2", similarity.entity2);
+				db_similarity.put("entity2SearchString", similarity.entity2SearchString);
+				db_similarity.put("commonClasses", similarity.commonClasses.toArray(new String[]{}));
+				db_similarity.put("commonLinks", similarity.commonLinks.toArray(new String[]{}));
+				db_similarities.add(db_similarity);
+			}
+		}
+		
+		if(maxExceedsThreshold) {
+			setFields.put("sessionId", semanticSession.sessionId);
+			setFields.put("searchStrings", semanticSession.getSearchStrings());
+			setFields.put("searchStringsUnqualified", semanticSession.getUnqualifiedSearchStrings());
+			setFields.put("entityNames", semanticSession.getEntityNames());
+			setFields.put("similarities", db_similarities);
+			
+			setOperator.put("$set", setFields);
+			
+			this.semanticSessions.update(selector, setOperator, true, false);
+		}
+
+	}
+	
+	public void addSessionCluster(EntityToClassMapping mapping) {
+		BasicDBObject selector = new BasicDBObject("entityName", mapping.entityName);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		setFields.put("entityName", mapping.entityName);
+		setFields.put("searchString", mapping.searchString);
+		setFields.put("mappings", mapping.mappingsAsBasicDBList());
+		
+		setOperator.put("$set", setFields);
+		this.sessionClusters.update(selector, setOperator, true, false);
+	}
+	
 	/*
 	 
 	// for QueryMapperOld
@@ -399,6 +476,14 @@ public class MongoWriter {
 		return this.usefulSessions;
 	}
 	
+	public DBCollection getSemanticSessionsCollection() {
+		return this.semanticSessions;
+	}
+	
+	public DBCollection getSessionClustersCollection() {
+		return this.sessionClusters;
+	}
+	
 	// Document methods
 	public DBObject getOneEntity(BasicDBObject criteria) {
 		return this.entities.findOne(criteria);
@@ -449,14 +534,6 @@ public class MongoWriter {
 	// Deletion methods
 	public void dropDatabase() {
 		db.dropDatabase();
-	}
-	
-	public void dropEntitiesCollection() {
-		this.entities.drop();
-	}
-	
-	public void dropClassesCollection() {
-		this.classes.drop();
 	}
 	
 	
