@@ -4,6 +4,7 @@ input/
 output/
 .classpath
 .project
+.pydevproject
 
 .idea/
 .metadata/
