@@ -38,6 +38,10 @@ import reader.BigFileSampler;
 import reader.PreprocessedLogReader;
 import writer.MongoWriter;
 
+/**
+ * 
+ * @author Li Quan Khoo
+ */
 public class Main {
 	
 	public static final String MONGODB_HOST = "localhost";
@@ -117,7 +121,7 @@ public class Main {
 		
 		yagoProcessor.run();
 		// hierarchy.toFile(); // Uncomment this line to write to file
-		hierarchy.toDb(); // Uncomment this line to write to MongoDB
+		hierarchy.toDBClassesCollection(); // Uncomment this line to write to MongoDB
 	}
 	
 	/**
@@ -224,6 +228,12 @@ public class Main {
 		sessionClusterer.clusterSessions();
 	}
 	
+	private static void constructSessionHierarchy() {
+		MongoWriter mongoWriter = newMongoWriter();
+		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
+		sessionClusterer.constructSessionHierarchy();
+	}
+	
 	// Data inspection methods
 	
 	private static void printEntities() {
@@ -255,8 +265,7 @@ public class Main {
 	}
 	
 	private static void printEntities(String searchString) {
-		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping()
-				.create();
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		
 		DBCollection collection;
 		DBCursor cursor;
@@ -400,6 +409,22 @@ public class Main {
 		}
 	}
 	
+	private static void printClusterClassToEntityMapping() {
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		MongoWriter mongoWriter = newMongoWriter();
+		try {
+			
+			DBCursor cursor = mongoWriter.getClusterMappingsClassToEntityCollection().find(new BasicDBObject());
+			DBObject obj;
+			while(cursor.hasNext()) {
+				obj = cursor.next();
+				System.out.println(gson.toJson(obj));
+			}
+		} finally {
+			mongoWriter.close();
+		}
+	}
+	
 	private static void mongoDBQueryPerformanceTest() {
 		
 		long startTime = System.currentTimeMillis();
@@ -507,11 +532,14 @@ public class Main {
 		// printEntities("scala");
 		// printClasses();
 		// printClass("<wordnet_bishop_109857200>");
+		// printClass("owl:Thing");
+		// printClass("<wordnet_organization_108008335>");
 		// printClassMembers("<wordnet_bishop_109857200>");
 		// printSearchMaps();
 		// printSearchMap("indonesia");
 		// printSessionCluster("<Michigan>");
 		// printSemanticSession(8001449);
+		// printClusterClassToEntityMapping();
 		
 		/* Operator calls */
 		// preprocessQueryLogs();
@@ -526,6 +554,7 @@ public class Main {
 		// findUsefulSearchSessions();
 		// findSessionSemantics(8); // Similarity threshold of 8
 		// clusterSessions();
+		constructSessionHierarchy();
 		
 		/* Utility methods */
 		// sampleFiles("input/yago/tsv");

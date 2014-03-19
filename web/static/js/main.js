@@ -1,3 +1,6 @@
+/**
+ * @author Li Quan Khoo
+ */
 var APP = APP || {};
 
 (function($, _, Backbone, d3) {
@@ -82,10 +85,10 @@ var APP = APP || {};
         },
         render: function() {
             
-            console.log(this.getSearch());
-            
             var width = $(window).width();
             var height = $(window).height();
+            var centerX = width / 2;
+            var centerY = height / 2;
             
             var entities = this.getSearch().getEntities();
             var similarities = this.getSearch().getSimilarities();
@@ -101,34 +104,42 @@ var APP = APP || {};
             var group = 1; // numeric group for use in d3 rendering
             var i;
             
-            dataObj.nodes.push({
-                group: 0,
-                name: 'CLUSTER_ROOT_NODE',
-                fixed: true,
-                x: width / 2,
-                y: height / 2
-            });
-            index++;
+            var groupCount = 0;
+            for(var searchString in entities) {
+                if(entities.hasOwnProperty(searchString)) {
+                    groupCount++;
+                }
+            }
+            groupCount;
+            var radius = Math.min(width, height) / 3;
+            var anglePerNodeInDeg = 360 / groupCount;
             
             for(var searchString in entities) {
-                
-                // set central node for searchString
-                dataObj.nodes.push({
-                    group: 0,
-                    name: searchString,
-                });
-                
-                entityNameToIndexHash[searchString] = index;
-                index++;
-                
-                // link searchString node to root
-                dataObj.links.push({
-                    source: 0,
-                    target: entityNameToIndexHash[searchString],
-                    value: 0.1
-                });
-                
                 if(entities.hasOwnProperty(searchString)) {
+                    
+                    // set central node for searchString
+                    if(groupCount === 1) {
+                        dataObj.nodes.push({
+                            group: 0,
+                            name: searchString,
+                            fixed: true,
+                            root: true,
+                            x: centerX,
+                            y: centerY
+                        });
+                    } else {
+                        dataObj.nodes.push({
+                            group: 0,
+                            name: searchString,
+                            fixed: true,
+                            x: centerX + radius * Math.sin(group * anglePerNodeInDeg * Math.PI / 180),
+                            y: centerY + radius * Math.cos(group * anglePerNodeInDeg * Math.PI / 180)
+                        });
+                    }
+                    
+                    entityNameToIndexHash[searchString] = index;
+                    index++;
+                    
                     for(i = 0; i < entities[searchString].length; i++) {
                         
                         // set node
@@ -164,50 +175,56 @@ var APP = APP || {};
             
             console.log(dataObj);
             
-            // Force directed graph with voronoi shape nodes
-            // Mostly copied from http://bl.ocks.org/couchand/6420534
+            // Force directed graph
             
             var color = d3.scale.category10();
             
-            var width = '100%',
-                height = '100%';
             var svg = d3.select('#visualizer-wrapper').append('svg')
-                .attr('width', width)
-                .attr('height', height);
+                    .attr('width', width)
+                    .attr('height', height);
             
             var force = d3.layout.force()
                 .nodes(dataObj.nodes)
                 .links(dataObj.links)
-                .charge(-2000)
+                .charge(-4000)
                 .linkDistance(50)
                 .friction(0.3)
+                .size([width, height])
                 .start();
             
-            var link = svg.selectAll(".link")
+            var link = svg.selectAll('.link')
                 .data(dataObj.links)
-              .enter().append("line")
-                .attr("class", "link")
-                .style("stroke-width", function(d) { return Math.sqrt(d.value); });
-
-        var node = svg.selectAll(".node")
-            .data(dataObj.nodes)
-          .enter().append("circle")
-            .attr("class", "node")
-            .attr("r", 5)
-            .style("fill", function(d) { return color(d.group); })
-            .call(force.drag);
-        
-        force.on("tick", function() {
+              .enter().append('line')
+                .attr('class', 'link')
+                .style('stroke-width', function(d) { return Math.sqrt(d.value); });
             
-            link.attr("x1", function(d) { return d.source.x; })
-                .attr("y1", function(d) { return d.source.y; })
-                .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
+            var group = svg.selectAll('g.gnode')
+                .data(dataObj.nodes)
+              .enter().append('g')
+                .attr('class', 'gnode')
+                .call(force.drag);
             
-            node.attr("cx", function(d) { return d.x; })
-                .attr("cy", function(d) { return d.y; });
-          });
-        
+            var node = group.append('circle')
+                .attr('class', 'node')
+                .attr('r', 10)
+                .style('fill', function(d) { return color(d.group); });
+            
+            var label = group.append('text')
+                .style('font-size', '10px')
+                .text(function(d) { return d.name; });
+            
+            force.on('tick', function() {
+                
+                link.attr('x1', function(d) { return d.source.x; })
+                    .attr('y1', function(d) { return d.source.y; })
+                    .attr('x2', function(d) { return d.target.x; })
+                    .attr('y2', function(d) { return d.target.y; });
+                
+                group.attr('transform', function(d) { 
+                    return 'translate(' + [d.x, d.y] + ')'; 
+                });
+                
+            });
         }
     });
     

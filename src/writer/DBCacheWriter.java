@@ -5,7 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import model.SearchStringToClassMapping;
+import model.mapping.SearchStringToClassMapping;
 
 public class DBCacheWriter {
 	

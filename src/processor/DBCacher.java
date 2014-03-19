@@ -3,7 +3,7 @@ package processor;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import model.SearchStringToClassMapping;
+import model.mapping.SearchStringToClassMapping;
 
 import reader.DBCacheReader;
 

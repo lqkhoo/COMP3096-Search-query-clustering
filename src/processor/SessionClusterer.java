@@ -6,14 +6,19 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import lib.Stemmer;
-import model.EntityToClassMapping;
 import model.SearchSessionSerial;
 import model.SemanticSession;
-import model.SessionSearchStringMapping;
+import model.YagoClassNode;
+import model.YagoHierarchy;
+import model.mapping.ClassToEntityMapping;
+import model.mapping.EntityToClassMapping;
+import model.mapping.EntityToEntityMapping;
+import model.mapping.SessionSearchStringMapping;
 
 import reader.DBCacheReader;
 import reader.PreprocessedLogReader;
@@ -216,6 +221,66 @@ public class SessionClusterer {
 		}
 	}
 	
+	/**
+	 * Fourth runnable method. This binds semantic sessions to YAGO's class hierarchy under
+	 *   the mongoDB collection hierarchicalClusters
+	 */
+	public void constructSessionHierarchy() {
+		
+		DBCollection semanticSessions = this.mongoWriter.getSemanticSessionsCollection();
+		DBCursor cursor;
+		DBObject semanticSession;
+		BasicDBList similarities;
+		int sessionId;
+		
+		BasicDBObject similarity;
+		double similarityScore;
+		String entity1Name;
+		String entity2Name;
+		BasicDBList commonClasses;
+		
+		String commonClass;
+		
+		int sessionsProcessed = 0;
+		
+		HashMap<String, ArrayList<ClassToEntityMapping>> classToEntityMappings = 
+				new HashMap<String, ArrayList<ClassToEntityMapping>>();
+		
+		HashMap<String, ArrayList<EntityToEntityMapping>> entityToEntityMappings = 
+				new HashMap<String, ArrayList<EntityToEntityMapping>>();
+		
+		cursor = semanticSessions.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			semanticSession = cursor.next();
+			sessionId = (Integer) semanticSession.get("sessionId");
+			similarities = (BasicDBList) semanticSession.get("similarities");
+			if(similarities != null) {
+				for(int i = 0; i < similarities.size(); i++) {
+					similarity = (BasicDBObject) similarities.get(i);
+					similarityScore = (Double) similarity.get("similarity");
+					entity1Name = (String) similarity.get("entity1");
+					entity2Name = (String) similarity.get("entity2");
+					commonClasses = (BasicDBList) similarity.get("commonClasses");
+					// ignore common links
+					
+					if(commonClasses != null) {
+						for(int j = 0; j < commonClasses.size(); j++) {
+							commonClass = (String) commonClasses.get(j);
+							
+							if(! classToEntityMappings.containsKey(commonClass)) {
+								classToEntityMappings.put(commonClass, new ArrayList<ClassToEntityMapping>());
+							}
+							classToEntityMappings.get(commonClass).add(new ClassToEntityMapping(sessionId, entity1Name, similarityScore));
+							classToEntityMappings.get(commonClass).add(new ClassToEntityMapping(sessionId, entity2Name, similarityScore));
+						}
+					}
+				}
+			}
+			reportSessionsProcessed(++sessionsProcessed);
+		}
+		
+		classToEntityMappingsToDB(classToEntityMappings);
+	}
 	
 	/**
 	 * Loads the entitiesToClassIds output from DBCacher
@@ -344,6 +409,22 @@ public class SessionClusterer {
 		}
 	}
 	
+	private void classToEntityMappingsToDB(HashMap<String, ArrayList<ClassToEntityMapping>> classToEntityMappings) {
+		
+		int sessionsProcessed = 0;
+		
+		System.out.println("SessionClusterer: Writing mappings to DB...");
+		String[] nodeNames = classToEntityMappings.keySet().toArray(new String[]{});
+		ArrayList<ClassToEntityMapping> mappingArray;
+		for(String nodeName : nodeNames) {
+			mappingArray = classToEntityMappings.get(nodeName);
+			Collections.sort(mappingArray);
+			this.mongoWriter.setClassToEntityMapping(nodeName, mappingArray);
+		}
+		
+		reportSessionsProcessed(++sessionsProcessed);
+	}
+	
 	/**
 	 * From a given string, generate all possible substrings (keeping word order) with space-delimited words
 	 * @param query
@@ -426,7 +507,7 @@ public class SessionClusterer {
 	}	
 	
 	private void reportSessionsProcessed(int sessionsProcessed) {
-		if(sessionsProcessed % 10000 == 0) {
+		if(sessionsProcessed % 1000 == 0) {
 			long duration = (System.currentTimeMillis() - prevReportTime) / 1000;
 			prevReportTime = System.currentTimeMillis();
 			System.out.println("SessionClusterer: Sessions processed: " + sessionsProcessed / 1000 + "k entities. (" + duration + " s)");

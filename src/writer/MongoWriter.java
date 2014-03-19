@@ -2,14 +2,19 @@ package writer;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import model.EntityToClassMapping;
 import model.SemanticSession;
 import model.Similarity;
+import model.YagoClassNode;
+import model.mapping.ClassToEntityMapping;
+import model.mapping.EntityToClassMapping;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.mongodb.BasicDBList;
 import com.mongodb.DBCursor;
 import com.mongodb.Mongo;
@@ -35,7 +40,10 @@ public class MongoWriter {
 	private DBCollection searchMaps;
 	private DBCollection usefulSessions;
 	private DBCollection semanticSessions;
+	@Deprecated
 	private DBCollection sessionClusters;
+	private DBCollection clusterMappingsClassToEntity;
+	private DBCollection clusterMappingsEntityToEntity;
 	
 	private long updateCount = 0;
 	private long prevTime = System.currentTimeMillis();
@@ -79,6 +87,11 @@ public class MongoWriter {
 			this.sessionClusters.ensureIndex(new BasicDBObject("searchString", 1));
 			this.sessionClusters.ensureIndex(new BasicDBObject("entityName", 1));
 			
+			this.clusterMappingsClassToEntity = db.getCollection("clusterMappingsClassToEntity");
+			this.clusterMappingsClassToEntity.ensureIndex("name");
+			
+			this.clusterMappingsEntityToEntity = db.getCollection("clusterMappingsEntityToEntity");
+			this.clusterMappingsEntityToEntity.ensureIndex("name");
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -89,6 +102,46 @@ public class MongoWriter {
 	// close
 	public void close() {
 		mongoClient.close();
+	}
+	
+	
+	// Collection methods
+	public DBCollection getEntitiesCollection() {
+		return this.entities;
+	}
+	
+	public DBCollection getClassesCollection() {
+		return this.classes;
+	}
+	
+	public DBCollection getClassMemberArraysCollection() {
+		return this.classMemberArrays;
+	}
+	
+	@Deprecated
+	public DBCollection getSearchMapsCollection() {
+		return this.searchMaps;
+	}
+	
+	public DBCollection getUsefulSessionsCollection() {
+		return this.usefulSessions;
+	}
+	
+	public DBCollection getSemanticSessionsCollection() {
+		return this.semanticSessions;
+	}
+	
+	@Deprecated
+	public DBCollection getSessionClustersCollection() {
+		return this.sessionClusters;
+	}
+	
+	public DBCollection getClusterMappingsClassToEntityCollection() {
+		return this.clusterMappingsClassToEntity;
+	}
+	
+	public DBCollection getClusterMappingsEntityToEntityCollection() {
+		return this.clusterMappingsEntityToEntity;
 	}
 	
 	// Update methods
@@ -398,6 +451,7 @@ public class MongoWriter {
 
 	}
 	
+	@Deprecated
 	public void addSessionCluster(EntityToClassMapping mapping) {
 		BasicDBObject selector = new BasicDBObject("entityName", mapping.entityName);
 		BasicDBObject setOperator = new BasicDBObject();
@@ -411,79 +465,49 @@ public class MongoWriter {
 		this.sessionClusters.update(selector, setOperator, true, false);
 	}
 	
-	/*
-	 
-	// for QueryMapperOld
-	public void addOrUpdateSearchMap(String name, String[] entityNames, HashMap<String, Boolean> entityNamesHash, int sessionId) {
-				
-		BasicDBObject selector = new BasicDBObject("name", name);
+	public void addClassToEntityMapping(String className, String entityName, double mapStrength, int sessionId) {
+		BasicDBObject selector = new BasicDBObject("name", className);
 		BasicDBObject setOnInsertOperator = new BasicDBObject();
-		BasicDBObject addToSetOperator = new BasicDBObject();
-		
-		// initial set
-		BasicDBObject mappings = new BasicDBObject();
-		mappings.put("complete", new BasicDBObject());
-		mappings.put("partial", new BasicDBObject());
-		
 		BasicDBObject setOnInsertFields = new BasicDBObject();
-		setOnInsertFields.put("name", name);
-		setOnInsertFields.put("mappings", mappings);
+		BasicDBObject pushOperator = new BasicDBObject();
+		BasicDBObject addFields = new BasicDBObject();
 		
-		// add to set on update
-		BasicDBObject addToSetFields = new BasicDBObject();
+		BasicDBObject mapObj = new BasicDBObject();
+		mapObj.put("name", entityName);
+		mapObj.put("mapStrength", mapStrength);
+		mapObj.put("sessionid", sessionId);
 		
-		for(String entityName : entityNames) {
-			String matchField;
-			if(entityName.equals(name)) {
-				continue;
-			} else {
-				matchField = (entityNamesHash.get(name) == true) ? "complete" : "partial";
-				addToSetFields.put("mappings." + matchField + "." + entityName, sessionId);
-			}
+		setOnInsertFields.put("name", className);
+		setOnInsertFields.put("mappings", new BasicDBList());
+		addFields.put("mappings", mapObj);
+		
+		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
+		pushOperator.put("$push", addFields);
+		
+		this.clusterMappingsClassToEntity.update(selector, setOnInsertOperator, true, false);
+		this.clusterMappingsClassToEntity.update(selector, pushOperator, true, false);
+	}
+	
+	public void setClassToEntityMapping(String className, ArrayList<ClassToEntityMapping> mappings) {
+		BasicDBObject selector = new BasicDBObject("name", className);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		Collections.sort(mappings);
+		BasicDBList mappingsList = new BasicDBList();
+		
+		// only add 100 of the best mappings - we don't need more
+		for(int i = 0; i < Math.min(mappings.size(), 100); i++) {
+			mappingsList.add(mappings.get(i).asBasicDBObject());
 		}
 		
-		// finalize operator
-		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
-		addToSetOperator.put("$addToSet", addToSetFields);
+		setFields.put("name", className);
+		setFields.put("mappings", mappingsList);
 		
-		// exec
-		this.searchMaps.update(selector, setOnInsertOperator, true, false);
-		this.searchMaps.update(selector, addToSetOperator, false, false);
+		setOperator.put("$set", setFields);
+		this.clusterMappingsClassToEntity.update(selector, setOperator, true, false);
+	}
 		
-		incrementUpdateCountAndReport();
-	}
-	*/
-	
-	// Collection methods
-	public DBCollection getEntitiesCollection() {
-		return this.entities;
-	}
-	
-	public DBCollection getClassesCollection() {
-		return this.classes;
-	}
-	
-	public DBCollection getClassMemberArraysCollection() {
-		return this.classMemberArrays;
-	}
-	
-	@Deprecated
-	public DBCollection getSearchMapsCollection() {
-		return this.searchMaps;
-	}
-	
-	public DBCollection getUsefulSessionsCollection() {
-		return this.usefulSessions;
-	}
-	
-	public DBCollection getSemanticSessionsCollection() {
-		return this.semanticSessions;
-	}
-	
-	public DBCollection getSessionClustersCollection() {
-		return this.sessionClusters;
-	}
-	
 	// Document methods
 	public DBObject getOneEntity(BasicDBObject criteria) {
 		return this.entities.findOne(criteria);

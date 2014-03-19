@@ -6,10 +6,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
+import model.mapping.ClassToEntityMapping;
+
 import writer.MongoWriter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.BasicDBList;
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
+import com.mongodb.DBObject;
 
 /**
  * Constructs a tree out of the given subset relations from YAGO
@@ -32,25 +39,40 @@ public class YagoHierarchy {
 		this.mongoWriter = mongoWriter;
 	}
 	
-	public void addRelation(String subclassName, String superclassName) {
+	public void addClassToClassMapping(String subclassName, String superclassName) {
 		
 		YagoClassNode subclass;
 		YagoClassNode superclass;
 		
+		if(! this.nodeMap.containsKey(subclassName)) {
+			this.nodeMap.put(subclassName, new YagoClassNode(subclassName));
+		}
 		subclass = this.nodeMap.get(subclassName);
-		if(subclass == null) {
-			subclass = new YagoClassNode(subclassName);
+		
+		if(! this.nodeMap.containsKey(superclassName)) {
+			this.nodeMap.put(superclassName, new YagoClassNode(superclassName));
 		}
 		superclass = this.nodeMap.get(superclassName);
-		if(superclass == null) {
-			superclass = new YagoClassNode(superclassName);
-		}
+		
 		subclass.addSuperclass(superclassName);
 		superclass.addSubclass(subclassName);
-		this.nodeMap.put(subclassName, subclass);
-		this.nodeMap.put(superclassName, superclass);
+		// this.nodeMap.put(subclassName, subclass);
+		// this.nodeMap.put(superclassName, superclass);
 	}
+	
+	public void addClassToEntityMapping(String className, int sessionId, String entityName, double mapStrength) {
 		
+		YagoClassNode cls;
+		
+		if(! this.nodeMap.containsKey(className)) {
+			this.nodeMap.put(className, new YagoClassNode(className));
+		}
+		cls = this.nodeMap.get(className);
+		
+		cls.addEntityMapping(new ClassToEntityMapping(sessionId, entityName, mapStrength));
+		
+	}
+	
 	public void toFile() {
 		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 		String json = gson.toJson(this.nodeMap);
@@ -78,21 +100,53 @@ public class YagoHierarchy {
 		}
 	}
 	
-	public void toDb() {
+	public void toDBClassesCollection() {
 		String[] nodeNames = this.nodeMap.keySet().toArray(new String[]{});
 		String className;
 		String[] superclassNames;
 		String[] subclassNames;
+		YagoClassNode node;
 		
 		System.out.println("YagoHierarchy: Writing hierarchy to MongoDb");
 		for(String nodeName : nodeNames) {
-			YagoClassNode node = this.nodeMap.get(nodeName);
+			node = this.nodeMap.get(nodeName);
 			className = node.getName();
 			superclassNames = node.getSuperclassNames().toArray(new String[]{});
 			subclassNames = node.getSubclassNames().toArray(new String[]{});
 			this.mongoWriter.setClassHierarchy(className, superclassNames, subclassNames);
 		}
 	}
-	
+		
+	public void fromDBClassesCollection() {
+		DBCollection classes = this.mongoWriter.getClassesCollection();
+		DBCursor cursor = classes.find(new BasicDBObject());
+		DBObject cls;
+		String name;
+		String[] subclassNames;
+		String[] superclassNames;
+		
+		YagoClassNode node;
+		
+		System.out.println("YagoHierarchy: Loading from MongoDB...");
+		while(cursor.hasNext()) {
+			cls = cursor.next();
+			name = (String) cls.get("name");
+			subclassNames = ((BasicDBList) cls.get("subclassNames")).toArray(new String[]{});
+			superclassNames = ((BasicDBList) cls.get("superclassNames")).toArray(new String[]{});
+			
+			node = new YagoClassNode(name);
+			node.setSubclasses(subclassNames);
+			node.setSuperclasses(superclassNames);
+			this.nodeMap.put(name, node);
+		}
+		
+		System.out.println("YagoHierarchy: Finished loading from MongoDB.");
+		/*
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		System.out.println(gson.toJson(this.nodeMap));
+		*/
+		
+	}
+		
 }
 

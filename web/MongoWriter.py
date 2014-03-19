@@ -43,3 +43,8 @@ class MongoWriter():
 				entityDocuments.append(record)
 		
 		return entityDocuments
+	
+	"""
+	"""
+	def getClassByClassName(self, className):
+		return self.stripBsonId(self.db['classes'].find_one({'name': className}))

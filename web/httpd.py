@@ -16,6 +16,7 @@ import cgi
 from flask import *
 
 from Core import Core
+from MongoWriter import MongoWriter
 
 # Settings
 SETTINGS = {
@@ -42,24 +43,34 @@ def root():
 	return render_template('index.html')
 
 
+@app.route('/explore', methods=['GET'])
+def explore():
+	return render_template('explore.html')
+
+
 @app.route('/api/entities', methods=['GET'])
 def api_entities():
 	
 	args = request.args.to_dict()
-		
+	
 	if('rawSearchString' in args):
-		
-		# Find all the relevant entities
-		entitiesDict = core.getEntities(args['rawSearchString'])
-		# Calculate similarity
-		dataDict = core.getSimilarities(entitiesDict)
-		
-		#TODO change
+		entitiesDict = core.getEntities(args['rawSearchString'])	# Find all the relevant entities
+		dataDict = core.getSimilarities(entitiesDict)				# Calculate similarity
 		return jsonify(dataDict)
 	
 	# No arguments supplied -- return empty list
 	return jsonify([])
 
+@app.route('/api/classes', methods=['GET'])
+def api_classes():
+	
+	args = request.args.to_dict()
+	
+	if('name' in args):
+		mongoWriter = MongoWriter(SETTINGS)
+		return jsonify(mongoWriter.getClassByClassName(args['name']))
+	
+	return None
 
 
 # Helpers -------------------------------------------------------------------------------

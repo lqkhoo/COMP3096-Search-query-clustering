@@ -40,7 +40,7 @@ public class YagoSimpleTaxonomyProcessor extends AYagoProcessor {
 					*/
 					
 					// No writing to mongo!!
-					hierarchy.addRelation(name, relationTarget);
+					hierarchy.addClassToClassMapping(name, relationTarget);
 				}
 			}
 			line = this.yagoReader.readNextLine_Tsv();

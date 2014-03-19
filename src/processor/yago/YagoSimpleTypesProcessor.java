@@ -45,7 +45,6 @@ public class YagoSimpleTypesProcessor extends AYagoProcessor {
 				name = lineMatcher.group(2);
 				relation = lineMatcher.group(3);
 				relationTarget = lineMatcher.group(4);
-				
 				mongoWriter.addOrUpdateEntity(name, relation, relationTarget);
 				
 				/*
