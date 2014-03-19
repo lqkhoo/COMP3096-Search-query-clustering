@@ -228,10 +228,16 @@ public class Main {
 		sessionClusterer.clusterSessions();
 	}
 	
-	private static void constructSessionHierarchy() {
+	private static void constructClassToEntityMappings() {
 		MongoWriter mongoWriter = newMongoWriter();
 		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
-		sessionClusterer.constructSessionHierarchy();
+		sessionClusterer.constructClassToEntityMappings();
+	}
+	
+	private static void constructEntityToEntityMappings() {
+		MongoWriter mongoWriter = newMongoWriter();
+		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
+		sessionClusterer.constructEntityToEntityMappings();
 	}
 	
 	// Data inspection methods
@@ -554,7 +560,8 @@ public class Main {
 		// findUsefulSearchSessions();
 		// findSessionSemantics(8); // Similarity threshold of 8
 		// clusterSessions();
-		constructSessionHierarchy();
+		// constructClassToEntityMappings();
+		// constructEntityToEntityMappings();
 		
 		/* Utility methods */
 		// sampleFiles("input/yago/tsv");

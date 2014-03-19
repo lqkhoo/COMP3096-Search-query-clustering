@@ -12,14 +12,49 @@ var APP = APP || {};
     APP.api = {
         getClassDataByClassName: function(className, callback) {
             $.ajax({
-                type : 'GET',
-                url : '/api/classes',
-                data : {name: className},
-                dataType : 'json',
-                success : callback,
-                error : function(jqXHr, textStatus, errorThrown) {
+                type: 'GET',
+                url: '/api/classes',
+                data: {name: className},
+                dataType: 'json',
+                success: callback,
+                error: function(jqXHr, textStatus, errorThrown) {
                     if (APP.DEBUG) {
-                        console.log('getClassData AJAX error');
+                        console.log('getClassDataByClassName AJAX error');
+                        console.log(jqXHr);
+                        console.log(textStatus);
+                        console.log(errorThrown);
+                    }
+                }
+            });
+        },
+        getClassToEntityMappingByClassName: function(className, callback) {
+            console.log(className);
+            $.ajax({
+                type: 'GET',
+                url: '/api/classestoentity',
+                data: {name: className},
+                dataType: 'json',
+                success: callback,
+                error: function(jqXHr, textStatus, errorThrown) {
+                    if (APP.DEBUG) {
+                        console.log('getClassToEntityMappingByClassName AJAX error');
+                        console.log(jqXHr);
+                        console.log(textStatus);
+                        console.log(errorThrown);
+                    }
+                }
+            });
+        },
+        getEntityToEntityMappingByEntityName: function(entityName, callback) {
+            $.ajax({
+                type: 'GET',
+                url: '/api/entitytoentity',
+                data: {name: entityName},
+                dataType: 'json',
+                success: callback,
+                error: function(jqXHr, textStatus, errorThrown) {
+                    if (APP.DEBUG) {
+                        console.log('getEntityToEntityMappingByClassName AJAX error');
                         console.log(jqXHr);
                         console.log(textStatus);
                         console.log(errorThrown);
@@ -33,6 +68,11 @@ var APP = APP || {};
     
 }(jQuery, d3));
 
+var ajaxDataCache = {
+        classes: {},
+        entities: {}
+    };
+
 $(document).ready(function() {
     
     var width = $(window).width();
@@ -40,10 +80,6 @@ $(document).ready(function() {
     var centerX = width / 2;
     var centerY = height / 2;
     
-    var ajaxDataCache = {
-        classes: {},
-        entities: {}
-    };
     
     // Hash of node names to graphDataObj indices for efficient seeks
     var graphDataHash = {
@@ -83,6 +119,7 @@ $(document).ready(function() {
         .size([width, height]);
         
     var color = d3.scale.category10();
+    
     function getColor(d) {
         switch(d) {
         case 'class':
@@ -220,47 +257,43 @@ $(document).ready(function() {
     
     // Data retrieval functions
     
-    function _getD3SuperclassDataByName(className) {
+    function _getD3ClassDataByName(className, isSourceRoot) {
         
-        function exec(data) {
-            
-            var nodes = [];
-            var linkArgs = [];
-            var superClassName;
-            
+        _getD3SubclassDataByName(className, isSourceRoot, function(data) {
             var i;
-            for(i = 0; i < data['superclassNames'].length; i++) {
-                superClassName = data['superclassNames'][i];
-                target = {
-                    name: superClassName,
-                    size: 1,
-                    dataType: 'class'
-                };
-                nodes.push(target);
-                linkArgs.push({
-                    sourceName: superClassName,
-                    sourceDataType: 'class',
-                    targetName: className,
-                    targetDataType: 'class',
-                    weight: 1
-                });
+            for(i = 0; i < data.length; i++) {
+                _getD3SuperclassDataByName(data[i]);
+                _getD3ClassToEntityMappingByName(data[i]);
             }
             
-            _extendGraph(nodes, linkArgs);
-            start();
-        }
+        });
         
-        if(ajaxDataCache.hasOwnProperty(className)) {
-            exec(ajaxDataCache[className]); // cache hit
-        } else {
-            APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
-                ajaxDataCache[className] = data;
-                exec(data);
-            });
-        }
     }
     
-    function _getD3SubclassDataByName(className, isSourceRoot) {
+    
+    
+    function _getD3ClassToEntityMappingByName(className) {
+                
+        function exec(data) {
+            
+        }
+        
+        if(ajaxDataCache['classes'].hasOwnProperty(className)) {
+            if(ajaxDataCache['classes'][className].hasOwnProperty('entityMappings')) {
+                exec(ajaxDataCache['classes'][className]['entityMappings']);
+                return;
+            }
+        }
+        
+        APP.api.getClassToEntityMappingByClassName(className, function(data) { // cache miss - async call
+            ajaxDataCache['classes'][className]['entityMappings'] = data;
+            exec(data);
+        });
+    }
+    
+    
+    
+    function _getD3SubclassDataByName(className, isSourceRoot, callback) {
         
         function exec(data) {
             var nodes = [];
@@ -303,23 +336,73 @@ $(document).ready(function() {
             _extendGraph(nodes, linkArgs);
             start();
             
-            for(i = 0; i < data['subclassNames'].length; i++) {
-                _getD3SuperclassDataByName(data['subclassNames'][i]);
+            if(callback) {
+                callback(data['subclassNames']);
             }
             
         }
         
         if(ajaxDataCache.hasOwnProperty(className)) {
-            exec(ajaxDataCache[className]); // cache hit
+            exec(ajaxDataCache['classes'][className]); // cache hit
         } else {
             APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
-                ajaxDataCache[className] = data;
+                ajaxDataCache['classes'][className] = data;
                 exec(data);
             });
         }
     }
     
+    
+    
+    function _getD3SuperclassDataByName(className, callback) {
+        
+        function exec(data) {
+            
+            var nodes = [];
+            var linkArgs = [];
+            var superClassName;
+            
+            var i;
+            for(i = 0; i < data['superclassNames'].length; i++) {
+                superClassName = data['superclassNames'][i];
+                target = {
+                    name: superClassName,
+                    size: 1,
+                    dataType: 'class'
+                };
+                nodes.push(target);
+                linkArgs.push({
+                    sourceName: superClassName,
+                    sourceDataType: 'class',
+                    targetName: className,
+                    targetDataType: 'class',
+                    weight: 1
+                });
+            }
+            
+            _extendGraph(nodes, linkArgs);
+            start();
+            
+            if(callback) {
+                callback(data['superclassNames']);
+            }
+        }
+        
+        if(ajaxDataCache.hasOwnProperty(className)) {
+            exec(ajaxDataCache['classes'][className]); // cache hit
+        } else {
+            APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
+                ajaxDataCache['classes'][className] = data;
+                exec(data);
+            });
+        }
+    }
+    
+    
+            
     // main method start - grab the root class
-    _getD3SubclassDataByName("owl:Thing", true);
+    _getD3ClassDataByName("owl:Thing", true);
+    
+    // _getD3ClassToEntityMappingByName("<wikicategory_Federal_countries>");
     
 });

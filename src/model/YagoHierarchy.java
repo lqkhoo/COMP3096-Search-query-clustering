@@ -6,8 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
-import model.mapping.ClassToEntityMapping;
-
 import writer.MongoWriter;
 
 import com.google.gson.Gson;
@@ -58,19 +56,6 @@ public class YagoHierarchy {
 		superclass.addSubclass(subclassName);
 		// this.nodeMap.put(subclassName, subclass);
 		// this.nodeMap.put(superclassName, superclass);
-	}
-	
-	public void addClassToEntityMapping(String className, int sessionId, String entityName, double mapStrength) {
-		
-		YagoClassNode cls;
-		
-		if(! this.nodeMap.containsKey(className)) {
-			this.nodeMap.put(className, new YagoClassNode(className));
-		}
-		cls = this.nodeMap.get(className);
-		
-		cls.addEntityMapping(new ClassToEntityMapping(sessionId, entityName, mapStrength));
-		
 	}
 	
 	public void toFile() {

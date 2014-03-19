@@ -6,18 +6,15 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 
 import lib.Stemmer;
 import model.SearchSessionSerial;
 import model.SemanticSession;
-import model.YagoClassNode;
-import model.YagoHierarchy;
-import model.mapping.ClassToEntityMapping;
+import model.mapping.ClassToEntityMap;
 import model.mapping.EntityToClassMapping;
-import model.mapping.EntityToEntityMapping;
+import model.mapping.EntityToEntityMap;
 import model.mapping.SessionSearchStringMapping;
 
 import reader.DBCacheReader;
@@ -222,10 +219,10 @@ public class SessionClusterer {
 	}
 	
 	/**
-	 * Fourth runnable method. This binds semantic sessions to YAGO's class hierarchy under
-	 *   the mongoDB collection hierarchicalClusters
+	 * Fourth runnable method. Gives mappings from a Yago class to its Entities based on 
+	 *   how likely it is for a searchString to mean that Entity within a given session (sessionId)
 	 */
-	public void constructSessionHierarchy() {
+	public void constructClassToEntityMappings() {
 		
 		DBCollection semanticSessions = this.mongoWriter.getSemanticSessionsCollection();
 		DBCursor cursor;
@@ -243,11 +240,7 @@ public class SessionClusterer {
 		
 		int sessionsProcessed = 0;
 		
-		HashMap<String, ArrayList<ClassToEntityMapping>> classToEntityMappings = 
-				new HashMap<String, ArrayList<ClassToEntityMapping>>();
-		
-		HashMap<String, ArrayList<EntityToEntityMapping>> entityToEntityMappings = 
-				new HashMap<String, ArrayList<EntityToEntityMapping>>();
+		ClassToEntityMap map = new ClassToEntityMap();
 		
 		cursor = semanticSessions.find(new BasicDBObject());
 		while(cursor.hasNext()) {
@@ -267,11 +260,64 @@ public class SessionClusterer {
 						for(int j = 0; j < commonClasses.size(); j++) {
 							commonClass = (String) commonClasses.get(j);
 							
-							if(! classToEntityMappings.containsKey(commonClass)) {
-								classToEntityMappings.put(commonClass, new ArrayList<ClassToEntityMapping>());
-							}
-							classToEntityMappings.get(commonClass).add(new ClassToEntityMapping(sessionId, entity1Name, similarityScore));
-							classToEntityMappings.get(commonClass).add(new ClassToEntityMapping(sessionId, entity2Name, similarityScore));
+							map.addMapping(commonClass, entity1Name, sessionId, similarityScore);
+							map.addMapping(commonClass, entity2Name, sessionId, similarityScore);
+						}
+					}
+				}
+			}			
+			reportSessionsProcessed(++sessionsProcessed);
+			
+		}
+		System.out.println(map.getMap().keySet().size());
+		
+		map.toDB(this.mongoWriter);
+	}
+	
+	/**
+	 * Fifth runnable method. Gives mappings from a Yago Entity to another Entity based on 
+	 *   how likely it is for a searchString to mean those Entities within a given session (sessionId)
+	 */
+	public void constructEntityToEntityMappings() {
+		
+		DBCollection semanticSessions = this.mongoWriter.getSemanticSessionsCollection();
+		DBCursor cursor;
+		DBObject semanticSession;
+		BasicDBList similarities;
+		int sessionId;
+		
+		BasicDBObject similarity;
+		double similarityScore;
+		String entity1Name;
+		String entity2Name;
+		BasicDBList commonClasses;
+		
+		String commonClass;
+		
+		int sessionsProcessed = 0;
+		
+		EntityToEntityMap map = new EntityToEntityMap();
+		
+		cursor = semanticSessions.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			semanticSession = cursor.next();
+			sessionId = (Integer) semanticSession.get("sessionId");
+			similarities = (BasicDBList) semanticSession.get("similarities");
+			if(similarities != null) {
+				for(int i = 0; i < similarities.size(); i++) {
+					similarity = (BasicDBObject) similarities.get(i);
+					similarityScore = (Double) similarity.get("similarity");
+					entity1Name = (String) similarity.get("entity1");
+					entity2Name = (String) similarity.get("entity2");
+					commonClasses = (BasicDBList) similarity.get("commonClasses");
+					// ignore common links
+					
+					if(commonClasses != null) {
+						for(int j = 0; j < commonClasses.size(); j++) {
+							commonClass = (String) commonClasses.get(j);
+							
+							map.addMapping(entity1Name, entity2Name, sessionId, similarityScore);
+							map.addMapping(entity2Name, entity1Name, sessionId, similarityScore);
 						}
 					}
 				}
@@ -279,7 +325,7 @@ public class SessionClusterer {
 			reportSessionsProcessed(++sessionsProcessed);
 		}
 		
-		classToEntityMappingsToDB(classToEntityMappings);
+		map.toDB(this.mongoWriter);
 	}
 	
 	/**
@@ -408,23 +454,7 @@ public class SessionClusterer {
 			this.batchFileWriter.writeToFile(gson.toJson(mappings), "sessionMapping");
 		}
 	}
-	
-	private void classToEntityMappingsToDB(HashMap<String, ArrayList<ClassToEntityMapping>> classToEntityMappings) {
 		
-		int sessionsProcessed = 0;
-		
-		System.out.println("SessionClusterer: Writing mappings to DB...");
-		String[] nodeNames = classToEntityMappings.keySet().toArray(new String[]{});
-		ArrayList<ClassToEntityMapping> mappingArray;
-		for(String nodeName : nodeNames) {
-			mappingArray = classToEntityMappings.get(nodeName);
-			Collections.sort(mappingArray);
-			this.mongoWriter.setClassToEntityMapping(nodeName, mappingArray);
-		}
-		
-		reportSessionsProcessed(++sessionsProcessed);
-	}
-	
 	/**
 	 * From a given string, generate all possible substrings (keeping word order) with space-delimited words
 	 * @param query

@@ -44,7 +44,34 @@ class MongoWriter():
 		
 		return entityDocuments
 	
+	
 	"""
+	@param className {String}
 	"""
 	def getClassByClassName(self, className):
 		return self.stripBsonId(self.db['classes'].find_one({'name': className}))
+	
+	
+	"""
+	@param className {String}
+	"""
+	def getClassToEntityMapping(self, className):
+		result = self.db['clusterMappingsClassToEntity'].find_one({'name': className})
+		if(result != None):
+			return self.stripBsonId(result)
+		else:
+			return None
+	
+	
+	"""
+	@param entityName {String}
+	"""
+	def getEntityToEntityMapping(self, entityName):
+		
+		result = self.db['clusterMappingsEntityToEntity'].find_one({'name': entityName})
+		if(result != None):
+			return self.stripBsonId(result)
+		else:
+			return None
+	
+	

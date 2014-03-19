@@ -10,8 +10,10 @@ import java.util.regex.Pattern;
 import model.SemanticSession;
 import model.Similarity;
 import model.YagoClassNode;
-import model.mapping.ClassToEntityMapping;
+import model.mapping.ClassToEntityMap;
+import model.mapping.DBMapRecord;
 import model.mapping.EntityToClassMapping;
+import model.mapping.MapStrength;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -465,40 +467,27 @@ public class MongoWriter {
 		this.sessionClusters.update(selector, setOperator, true, false);
 	}
 	
-	public void addClassToEntityMapping(String className, String entityName, double mapStrength, int sessionId) {
-		BasicDBObject selector = new BasicDBObject("name", className);
-		BasicDBObject setOnInsertOperator = new BasicDBObject();
-		BasicDBObject setOnInsertFields = new BasicDBObject();
-		BasicDBObject pushOperator = new BasicDBObject();
-		BasicDBObject addFields = new BasicDBObject();
-		
-		BasicDBObject mapObj = new BasicDBObject();
-		mapObj.put("name", entityName);
-		mapObj.put("mapStrength", mapStrength);
-		mapObj.put("sessionid", sessionId);
-		
-		setOnInsertFields.put("name", className);
-		setOnInsertFields.put("mappings", new BasicDBList());
-		addFields.put("mappings", mapObj);
-		
-		setOnInsertOperator.put("$setOnInsert", setOnInsertFields);
-		pushOperator.put("$push", addFields);
-		
-		this.clusterMappingsClassToEntity.update(selector, setOnInsertOperator, true, false);
-		this.clusterMappingsClassToEntity.update(selector, pushOperator, true, false);
-	}
-	
-	public void setClassToEntityMapping(String className, ArrayList<ClassToEntityMapping> mappings) {
+	public void setClassToEntityMapping(String className, HashMap<String, MapStrength> map, int maxSessionsPerMapping) {
 		BasicDBObject selector = new BasicDBObject("name", className);
 		BasicDBObject setOperator = new BasicDBObject();
 		BasicDBObject setFields = new BasicDBObject();
 		
-		Collections.sort(mappings);
-		BasicDBList mappingsList = new BasicDBList();
+		BasicDBList mappingsList = null;
 		
-		// only add 100 of the best mappings - we don't need more
-		for(int i = 0; i < Math.min(mappings.size(), 100); i++) {
-			mappingsList.add(mappings.get(i).asBasicDBObject());
+		String[] mapKeys = map.keySet().toArray(new String[]{});
+		ArrayList<DBMapRecord> dbRecords;
+		
+		dbRecords = new ArrayList<DBMapRecord>();
+		
+		for(String mapKey : mapKeys) {
+			dbRecords.add(new DBMapRecord(mapKey, map.get(mapKey)));
+		}
+		
+		mappingsList = new BasicDBList();
+		Collections.sort(dbRecords);
+		// only add as many as the limit specifies - we don't need more than that 
+		for(int i = 0; i < Math.min(dbRecords.size(), maxSessionsPerMapping); i++) {
+			mappingsList.add(dbRecords.get(i).toDbObject());
 		}
 		
 		setFields.put("name", className);
@@ -507,7 +496,37 @@ public class MongoWriter {
 		setOperator.put("$set", setFields);
 		this.clusterMappingsClassToEntity.update(selector, setOperator, true, false);
 	}
+	
+	public void setEntityToEntityMapping(String entityName, HashMap<String, MapStrength> map, int maxSessionsPerMapping) {
+		BasicDBObject selector = new BasicDBObject("name", entityName);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
 		
+		BasicDBList mappingsList = null;
+		
+		String[] mapKeys = map.keySet().toArray(new String[]{});
+		ArrayList<DBMapRecord> dbRecords;
+		
+		dbRecords = new ArrayList<DBMapRecord>();
+		
+		for(String mapKey : mapKeys) {
+			dbRecords.add(new DBMapRecord(mapKey, map.get(mapKey)));
+		}
+		
+		mappingsList = new BasicDBList();
+		Collections.sort(dbRecords);
+		// only add as many as the limit specifies - we don't need more than that 
+		for(int i = 0; i < Math.min(dbRecords.size(), maxSessionsPerMapping); i++) {
+			mappingsList.add(dbRecords.get(i).toDbObject());
+		}
+		
+		setFields.put("name", entityName);
+		setFields.put("mappings", mappingsList);
+		
+		setOperator.put("$set", setFields);
+		this.clusterMappingsEntityToEntity.update(selector, setOperator, true, false);
+	}
+	
 	// Document methods
 	public DBObject getOneEntity(BasicDBObject criteria) {
 		return this.entities.findOne(criteria);

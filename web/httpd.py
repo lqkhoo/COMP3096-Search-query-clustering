@@ -70,7 +70,34 @@ def api_classes():
 		mongoWriter = MongoWriter(SETTINGS)
 		return jsonify(mongoWriter.getClassByClassName(args['name']))
 	
-	return None
+	return jsonify({})
+
+
+@app.route('/api/classestoentity', methods=['GET'])
+def api_classesToEntity():
+	
+	args = request.args.to_dict()
+	
+	if('name' in args):
+		mongoWriter = MongoWriter(SETTINGS)
+		result = mongoWriter.getClassToEntityMapping(args['name'])
+		if(result != None):
+			return jsonify(result)
+	
+	return jsonify({})
+
+@app.route('/api/entitytoentity', methods=['GET'])
+def api_entityToEntity():
+	
+	args = request.args.to_dict()
+	
+	if('name' in args):
+		mongoWriter = MongoWriter(SETTINGS)
+		result = mongoWriter.getEntityToEntityMapping(args['name'])
+		if(result != None):
+			return jsonify(result)
+	
+	return jsonify({})
 
 
 # Helpers -------------------------------------------------------------------------------

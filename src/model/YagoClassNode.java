@@ -7,7 +7,7 @@ import java.util.Collections;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 
-import model.mapping.ClassToEntityMapping;
+import model.mapping.ClassToEntityMap;
 
 /**
  * Object representing a Yago class within a YagoHierarchy instance
@@ -20,7 +20,6 @@ public class YagoClassNode {
 	private String categoryType;
 	private ArrayList<String> superclasses;
 	private ArrayList<String> subclasses;
-	private ArrayList<ClassToEntityMapping> entityMappings;
 	
 	private int entityMapCountLimit = 100;
 	
@@ -30,7 +29,6 @@ public class YagoClassNode {
 		this.categoryType = null;
 		this.superclasses = new ArrayList<String>();
 		this.subclasses = new ArrayList<String>();
-		this.entityMappings = new ArrayList<ClassToEntityMapping>();
 	}
 	
 	public String getName() {
@@ -76,30 +74,6 @@ public class YagoClassNode {
 	public int setEntityMapCountLimit(int entityMapCountLimit) {
 		this.entityMapCountLimit = entityMapCountLimit; 
 		return this.entityMapCountLimit;
-	}
-	
-	public ArrayList<ClassToEntityMapping> addEntityMapping(ClassToEntityMapping mapping) {
-		this.entityMappings.add(mapping);
-		return this.entityMappings;
-	}
-	
-	public void sortEntityMappings() {
-		Collections.sort(this.entityMappings);
-	}
-	
-	public ArrayList<ClassToEntityMapping> getEntityMappings() {
-		return this.entityMappings;
-	}
-	
-	public BasicDBList mappingsAsBasicDBList() {
-		ClassToEntityMapping mapping;
-		BasicDBList ls = new BasicDBList();
-		for(int i = 0; i < Math.min(this.entityMappings.size(), this.entityMapCountLimit); i++) {
-			mapping = this.entityMappings.get(i);
-			ls.add(mapping.asBasicDBObject());
-		}
-		
-		return ls;
 	}
 	
 }
