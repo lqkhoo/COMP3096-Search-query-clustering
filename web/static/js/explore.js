@@ -28,7 +28,6 @@ var APP = APP || {};
             });
         },
         getClassToEntityMappingByClassName: function(className, callback) {
-            console.log(className);
             $.ajax({
                 type: 'GET',
                 url: '/api/classestoentity',
@@ -153,7 +152,7 @@ $(document).ready(function() {
             .append('g')
             .attr('class', 'gnode')
             .on('click', function(d) {
-                _getD3SubclassDataByName(d.name, false);
+                _getD3ClassDataByName(d.name, false);
             })
             .call(force.drag);
         
@@ -199,6 +198,7 @@ $(document).ready(function() {
             if(graphDataHash[node.dataType].hasOwnProperty(node.name)) {
                 // do nothing - if node already exists then just let it be
             } else {
+
                 graphDataObj.nodes.push(node);
                 graphDataHash[node.dataType][node.name] = graphDataObj.nodes.length - 1;
             }
@@ -242,6 +242,7 @@ $(document).ready(function() {
             } else {
                 console.log('!!!!!!!!');
                 // at least one of the nodes do not exist. We need to query the db for this node before we can add the link.
+                // This in principle shouldn't happen
                 
             }
         }
@@ -263,7 +264,12 @@ $(document).ready(function() {
             var i;
             for(i = 0; i < data.length; i++) {
                 _getD3SuperclassDataByName(data[i]);
-                _getD3ClassToEntityMappingByName(data[i]);
+                _getD3ClassToEntityMappingByName(data[i], function(data) {
+                    var i;
+                    for(i = 0; i < data.length; i++) {
+                        _getD3EntityToEntityMappingByName(data[i]);
+                    }
+                });
             }
             
         });
@@ -271,10 +277,111 @@ $(document).ready(function() {
     }
     
     
+    function _getD3EntityToEntityMappingByName(data) {
+        
+        function exec(data) {
+            
+            if(! data.hasOwnProperty('mappings')) {
+                return; // no entity maps to class -- do nothing
+            }
+            
+            var nodes = [];
+            var linkArgs = [];
+            
+            var target;
+            var source;
+            
+            var i;
+            for(i = 0; i < data['mappings'].length; i++) {
+                source = {
+                    name: data['name'],
+                    size: 1,
+                    dataType: 'entity'
+                };
+                nodes.push(source);
+                
+                target = {
+                    name: data['mappings'][i]['name'],
+                    size: 1,
+                    dataType: 'entity'
+                };
+                
+                nodes.push(target);
+                
+                linkArgs.push({
+                    sourceName: data['name'],
+                    sourceDataType: 'entity',
+                    targetName: data['mappings'][i]['name'],
+                    targetDataType: 'entity',
+                    weight: 1
+                });
+            }
+            
+            _extendGraph(nodes, linkArgs);
+            start();
+            
+        }
+        
+        if(ajaxDataCache['entities'].hasOwnProperty(data['name'])) {
+            exec(ajaxDataCache['classes'][data['name']]);
+            return;
+        }
+        
+        APP.api.getEntityToEntityMappingByEntityName(data['name'], function(data) { // cache miss - async call
+            ajaxDataCache['entities'] = data;
+            exec(data);
+        });
+        
+    }
     
-    function _getD3ClassToEntityMappingByName(className) {
+    
+    function _getD3ClassToEntityMappingByName(className, callback) {
                 
         function exec(data) {
+            
+            if(! data.hasOwnProperty('mappings')) {
+                return; // no entity maps to class -- do nothing
+            }
+            
+            var nodes = [];
+            var linkArgs = [];
+            
+            var target;
+            var source;
+            
+            var i;
+            for(i = 0; i < data['mappings'].length; i++) {
+                source = {
+                    name: className,
+                    size: 1,
+                    dataType: 'class'
+                };
+                nodes.push(source);
+                
+                target = {
+                    name: data['mappings'][i]['name'],
+                    size: 1,
+                    dataType: 'entity'
+                };
+                
+                nodes.push(target);
+                
+                linkArgs.push({
+                    sourceName: className,
+                    sourceDataType: 'class',
+                    targetName: data['mappings'][i]['name'],
+                    targetDataType: 'entity',
+                    weight: 1
+                });
+            }
+            
+            _extendGraph(nodes, linkArgs);
+            start();
+            
+            if(callback) {
+                callback(data['mappings']);
+            }
+            
             
         }
         
