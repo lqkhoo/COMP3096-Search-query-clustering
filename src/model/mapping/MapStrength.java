@@ -27,6 +27,11 @@ public class MapStrength implements Comparable<MapStrength> {
 		return this.mapStrength;
 	}
 	
+	public double incrementMapStrength(double increment) {
+		this.mapStrength += increment;
+		return this.mapStrength;
+	}
+	
 	@Override
 	public int compareTo(MapStrength other) {
 		// sort in reverse order

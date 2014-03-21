@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import model.YagoHierarchy;
 import processor.DBCacher;
 import processor.EntityClusterer;
+import processor.NaiveSearchStringToSemanticSession;
 import processor.Preprocessor;
 import processor.QueryMapper;
 import processor.SessionClusterer;
@@ -238,6 +239,18 @@ public class Main {
 		MongoWriter mongoWriter = newMongoWriter();
 		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
 		sessionClusterer.constructEntityToEntityMappings();
+	}
+	
+	private static void constructClassToStringMappings() {
+		MongoWriter mongoWriter = newMongoWriter();
+		SessionClusterer sessionClusterer = new SessionClusterer(mongoWriter);
+		sessionClusterer.constructClassToStringMappings();
+	}
+	
+	private static void addNaiveSearchStringsToSemanticSessions() {
+		MongoWriter mongoWriter = newMongoWriter();
+		NaiveSearchStringToSemanticSession cls = new NaiveSearchStringToSemanticSession(mongoWriter);
+		cls.run();
 	}
 	
 	// Data inspection methods
@@ -562,6 +575,8 @@ public class Main {
 		// clusterSessions();
 		// constructClassToEntityMappings();
 		// constructEntityToEntityMappings();
+		constructClassToStringMappings();
+		// addNaiveSearchStringsToSemanticSessions();
 		
 		/* Utility methods */
 		// sampleFiles("input/yago/tsv");

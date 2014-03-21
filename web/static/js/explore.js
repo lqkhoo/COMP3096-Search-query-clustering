@@ -95,13 +95,13 @@ $(document).ready(function() {
     var svg = d3.select('#container').append('svg')
         .attr('width', width)
         .attr('height', height)
-        .attr("viewBox", "0 0 " + width + " " + height )
-        .attr("preserveAspectRatio", "xMidYMid meet")
-        .call(d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom));
+        .attr('viewBox', '0 0 ' + width + ' ' + height )
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .call(d3.behavior.zoom().scaleExtent([0.1, 3]).on('zoom', zoom));
         
     var vis = svg.append('svg:g');
     function zoom() {
-        vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale +")");
+        vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale +')');
     };
     
     var group;
@@ -508,7 +508,8 @@ $(document).ready(function() {
     
             
     // main method start - grab the root class
-    _getD3ClassDataByName("owl:Thing", true);
+    // _getD3ClassDataByName('<wordnet_capital_108518505>', true);
+    _getD3ClassDataByName('owl:Thing', true);
     
     // _getD3ClassToEntityMappingByName("<wikicategory_Federal_countries>");
     

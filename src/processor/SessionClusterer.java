@@ -8,11 +8,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lib.Stemmer;
 import model.SearchSessionSerial;
 import model.SemanticSession;
 import model.mapping.ClassToEntityMap;
+import model.mapping.ClassToStringMap;
 import model.mapping.EntityToClassMapping;
 import model.mapping.EntityToEntityMap;
 import model.mapping.SessionSearchStringMapping;
@@ -326,6 +329,121 @@ public class SessionClusterer {
 		}
 		
 		map.toDB(this.mongoWriter);
+	}
+	
+	/**
+	 * Sixth runnable method. Gives mappings from a Yago class to strings within AOL log sessions
+	 */
+	public void constructClassToStringMappings() {
+		
+		Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+		
+		DBCollection semanticSessions = this.mongoWriter.getSemanticSessionsCollection();
+		DBCursor cursor;
+		DBObject semanticSession;
+		BasicDBList similarities;
+		BasicDBList queryStrings;
+		int sessionId;
+		
+		BasicDBObject similarity;
+		double similarityScore;
+		String entity1Name;
+		String entity1SearchString;
+		String entity2Name;
+		String entity2SearchString;
+		BasicDBList commonClasses;
+		
+		String commonClass;
+		
+		int sessionsProcessed = 0;
+		
+		HashSet<String> processedEntities;
+		ClassToStringMap map = new ClassToStringMap();
+		
+		cursor = semanticSessions.find(new BasicDBObject());
+		while(cursor.hasNext()) {
+			semanticSession = cursor.next();
+			
+			processedEntities = new HashSet<String>();
+			
+			sessionId = (Integer) semanticSession.get("sessionId");
+			similarities = (BasicDBList) semanticSession.get("similarities");
+			queryStrings = (BasicDBList) semanticSession.get("queryStrings");
+			if(similarities != null) {
+				for(int i = 0; i < similarities.size(); i++) {
+					similarity = (BasicDBObject) similarities.get(i);
+					similarityScore = (Double) similarity.get("similarity");
+					entity1Name = (String) similarity.get("entity1");
+					entity1SearchString = (String) similarity.get("entity1SearchString");
+					entity2Name = (String) similarity.get("entity2");
+					entity2SearchString = (String) similarity.get("entity2SearchString");
+					commonClasses = (BasicDBList) similarity.get("commonClasses");
+					// ignore common links
+					
+					getStringToClassMapping(entity1Name, entity1SearchString, queryStrings, commonClasses, processedEntities, map);
+					getStringToClassMapping(entity2Name, entity2SearchString, queryStrings, commonClasses, processedEntities, map);
+					
+				}
+			}
+			reportSessionsProcessed(++sessionsProcessed);
+		}
+		// System.out.println(gson.toJson(map));
+		// System.out.println(map.getMap().keySet().size());
+		map.toDB(this.mongoWriter);
+	}
+	
+	/**
+	 * Helper for the above function
+	 */
+	private void getStringToClassMapping(String entityName, String entitySearchString, BasicDBList queryStrings,
+			BasicDBList commonClasses, HashSet<String> processedEntities, ClassToStringMap map) {
+		
+		// If entity has already been accounted for then do nothing
+		if(processedEntities.contains(entityName)) {
+			return;
+		}
+		
+		if(queryStrings == null) {
+			return;
+		}
+		
+		for(int i = 0; i < queryStrings.size(); i++) {
+			
+			Pattern linePattern = Pattern.compile("((.*)[\\s]?(" + entitySearchString + ")[\\s]?(.*)?)");
+			Matcher lineMatcher;
+			
+			String before;
+			String searchString;
+			String after;
+			
+			lineMatcher = linePattern.matcher((String) queryStrings.get(i));
+			if(lineMatcher.find()) {
+				
+				/*
+				System.out.println(lineMatcher.group(1));	// the whole line
+				System.out.println(lineMatcher.group(2));	// before
+				System.out.println(lineMatcher.group(3));	// searchString
+				System.out.println(lineMatcher.group(4));	// after 
+				*/
+				
+				before = lineMatcher.group(2);
+				searchString = lineMatcher.group(3);
+				after = lineMatcher.group(4);
+				
+				for(int j = 0; j < commonClasses.size(); j++) {
+					if(! before.equals("") && before.split("\\s+").length < 3) {
+						map.addMapping((String) commonClasses.get(j), before.trim(), 0, 1);
+					}
+					if(! after.equals("") && after.split("\\s+").length < 3) {
+						map.addMapping((String) commonClasses.get(j), after.trim(), 0, 1);
+					}
+					
+				}
+				
+			}
+			
+		}
+		
 	}
 	
 	/**

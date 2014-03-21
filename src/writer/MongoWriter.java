@@ -12,6 +12,7 @@ import model.Similarity;
 import model.YagoClassNode;
 import model.mapping.ClassToEntityMap;
 import model.mapping.DBMapRecord;
+import model.mapping.DBSimpleMapRecord;
 import model.mapping.EntityToClassMapping;
 import model.mapping.MapStrength;
 
@@ -46,6 +47,7 @@ public class MongoWriter {
 	private DBCollection sessionClusters;
 	private DBCollection clusterMappingsClassToEntity;
 	private DBCollection clusterMappingsEntityToEntity;
+	private DBCollection clusterMappingsClassToString;
 	
 	private long updateCount = 0;
 	private long prevTime = System.currentTimeMillis();
@@ -94,6 +96,9 @@ public class MongoWriter {
 			
 			this.clusterMappingsEntityToEntity = db.getCollection("clusterMappingsEntityToEntity");
 			this.clusterMappingsEntityToEntity.ensureIndex("name");
+			
+			this.clusterMappingsClassToString = db.getCollection("clusterMappingsClassToString");
+			this.clusterMappingsClassToString.ensureIndex("name");
 			
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
@@ -144,6 +149,10 @@ public class MongoWriter {
 	
 	public DBCollection getClusterMappingsEntityToEntityCollection() {
 		return this.clusterMappingsEntityToEntity;
+	}
+	
+	public DBCollection getClusterMappingsClassToStringCollection() {
+		return this.clusterMappingsClassToString;
 	}
 	
 	// Update methods
@@ -525,6 +534,51 @@ public class MongoWriter {
 		
 		setOperator.put("$set", setFields);
 		this.clusterMappingsEntityToEntity.update(selector, setOperator, true, false);
+	}
+	
+	public void setClassToStringMapping(String className, HashMap<String, Integer> map, int maxSessionsPerMapping) {
+		BasicDBObject selector = new BasicDBObject("name", className);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		BasicDBList mappingsList = null;
+		
+		String[] mapKeys = map.keySet().toArray(new String[]{});
+		ArrayList<DBSimpleMapRecord> dbRecords;
+		
+		dbRecords = new ArrayList<DBSimpleMapRecord>();
+		
+		for(String mapKey : mapKeys) {
+			dbRecords.add(new DBSimpleMapRecord(mapKey, map.get(mapKey)));
+		}
+		
+		mappingsList = new BasicDBList();
+		Collections.sort(dbRecords);
+		// only add as many as the limit specifies - we don't need more than that 
+		for(int i = 0; i < Math.min(dbRecords.size(), maxSessionsPerMapping); i++) {
+			mappingsList.add(dbRecords.get(i).toDbObject());
+		}
+		
+		setFields.put("name", className);
+		setFields.put("mappings", mappingsList);
+		
+		setOperator.put("$set", setFields);
+		this.clusterMappingsClassToString.update(selector, setOperator, true, false);
+	}
+	
+	public void setSemanticSessionQueries(int sessionId, String[] queries) {
+		BasicDBObject selector = new BasicDBObject("sessionId", sessionId);
+		BasicDBObject setOperator = new BasicDBObject();
+		BasicDBObject setFields = new BasicDBObject();
+		
+		BasicDBList dbList = new BasicDBList();
+		for(String query : queries) {
+			dbList.add(query);
+		}
+		
+		setFields.put("queryStrings", dbList);
+		setOperator.put("$set", setFields);
+		this.semanticSessions.update(selector, setOperator, false, false);
 	}
 	
 	// Document methods
