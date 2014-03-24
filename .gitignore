@@ -5,7 +5,7 @@ output/
 .classpath
 .project
 .pydevproject
-.pyc
+*.pyc
 
 .idea/
 .metadata/
