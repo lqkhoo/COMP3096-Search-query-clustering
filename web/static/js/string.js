@@ -101,7 +101,9 @@ var APP = APP || {};
                 y: centerY
             };
             
-            dataObj.nodes.push(source);0;
+            dataObj.nodes.push(source);
+            
+            targets = [];
             
             for(var string in mappings) {
                 if(string !== '') {
@@ -112,15 +114,34 @@ var APP = APP || {};
                         size: mappings[string].length,
                         fixed: false
                     };
-                    dataObj.nodes.push(target);
-                    
-                    dataObj.links.push({
-                        source: source,
-                        target: target,
-                        value: 0.1
-                    });
+                    targets.push(target);
+
                 }
             }
+            
+            targets.sort(function(a, b) {
+                if(a.size < b.size) {
+                    return 1;
+                }
+                if(a.size > b.size) {
+                    return -1;
+                }
+                return 0;
+            });
+            
+            console.log(targets);
+            
+            var j;
+            for(j = 0; j < Math.min(targets.length, 30); j++) {
+                dataObj.nodes.push(targets[j]);
+                
+                dataObj.links.push({
+                    source: source,
+                    target: targets[j],
+                    value: 0.1
+                });
+            }
+            
             console.log(dataObj);
             
             // Force directed graph
@@ -134,7 +155,7 @@ var APP = APP || {};
             var force = d3.layout.force()
                 .nodes(dataObj.nodes)
                 .links(dataObj.links)
-                .charge(-4000)
+                .charge(-10000)
                 .linkDistance(50)
                 .friction(0.3)
                 .size([width, height])
@@ -160,7 +181,7 @@ var APP = APP || {};
                 .style('fill', function(d) { return color(d.group); });
             
             var label = group.append('text')
-                .style('font-size', '10px')
+                .style('font-size', '16px')
                 .text(function(d) {
                     if(d.hasOwnProperty('cls')) {
                         return d.name + ' (' + d.size + ')';
