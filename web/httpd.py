@@ -48,6 +48,23 @@ def explore():
 	return render_template('explore.html')
 
 
+@app.route('/string', methods=['GET'])
+def explorecountry():
+	return render_template('string.html')
+
+
+@app.route('/api/searchmaps', methods=['GET'])
+def api_searchmaps():
+	
+	args = request.args.to_dict()
+	
+	if('searchString' in args):
+		mongoWriter = MongoWriter(SETTINGS)
+		return jsonify(mongoWriter.getSearchMaps(args['searchString']));
+	
+	return jsonify({})
+
+
 @app.route('/api/entities', methods=['GET'])
 def api_entities():
 	
@@ -73,7 +90,7 @@ def api_classes():
 	return jsonify({})
 
 
-@app.route('/api/classestoentity', methods=['GET'])
+@app.route('/api/classtoentity', methods=['GET'])
 def api_classesToEntity():
 	
 	args = request.args.to_dict()
@@ -86,6 +103,7 @@ def api_classesToEntity():
 	
 	return jsonify({})
 
+
 @app.route('/api/entitytoentity', methods=['GET'])
 def api_entityToEntity():
 	
@@ -97,6 +115,20 @@ def api_entityToEntity():
 		if(result != None):
 			return jsonify(result)
 	
+	return jsonify({})
+
+
+@app.route('/api/classtostring', methods=['GET'])
+def api_classToString():
+	
+	args = request.args.to_dict()
+	
+	if('name' in args):
+		mongoWriter = MongoWriter(SETTINGS)
+		result = mongoWriter.getClassToStringMapping(args['name'])
+		if(result != None):
+			return jsonify(result)
+		
 	return jsonify({})
 
 

@@ -28,6 +28,11 @@ class MongoWriter():
 		del bsonObj['_id']
 		return bsonObj
 	
+	"""
+	"""
+	def getSearchMaps(self, searchString):
+		return self.stripBsonId(self.db['searchMaps'].find_one({'searchString': searchString}))
+	
 	
 	"""
 	@param searchString {String} searchString of the entity
@@ -69,6 +74,18 @@ class MongoWriter():
 	def getEntityToEntityMapping(self, entityName):
 		
 		result = self.db['clusterMappingsEntityToEntity'].find_one({'name': entityName})
+		if(result != None):
+			return self.stripBsonId(result)
+		else:
+			return None
+		
+	
+	"""
+	@param className {String}
+	"""
+	def getClassToStringMapping(self, className):
+		print className
+		result = self.db['clusterMappingsClassToString'].find_one({'name': className})
 		if(result != None):
 			return self.stripBsonId(result)
 		else:
