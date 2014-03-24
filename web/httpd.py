@@ -42,15 +42,21 @@ core = Core(SETTINGS)
 def root():
 	return render_template('index.html')
 
+@app.route('/map', methods=['GET'])
+def map():
+	return render_template('map.html')
 
 @app.route('/explore', methods=['GET'])
 def explore():
 	return render_template('explore.html')
 
-
 @app.route('/string', methods=['GET'])
-def explorecountry():
+def string():
 	return render_template('string.html')
+
+@app.route('/entity', methods=['GET'])
+def entity():
+	return render_template('entity.html')
 
 
 @app.route('/api/searchmaps', methods=['GET'])
