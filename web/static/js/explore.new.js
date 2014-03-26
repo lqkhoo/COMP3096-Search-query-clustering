@@ -60,6 +60,23 @@ var APP = APP || {};
                     }
                 }
             });
+        },
+        getClassToStringMappingByClassName: function(className, callback) {
+            $.ajax({
+                type: 'GET',
+                url: '/api/classtostring',
+                data: {name: className},
+                dataType: 'json',
+                success: callback,
+                error: function(jqXHr, textStatus, errorThrown) {
+                    if (APP.DEBUG) {
+                        console.log('getClassToStringMappingByClassName AJAX error');
+                        console.log(jqXHr);
+                        console.log(textStatus);
+                        console.log(errorThrown);
+                    }
+                }
+            });
         }
     };
     
@@ -69,7 +86,8 @@ var APP = APP || {};
 
 var ajaxDataCache = {
         classes: {},
-        entities: {}
+        entities: {},
+        strings: {}
     };
 
 $(document).ready(function() {
@@ -84,7 +102,8 @@ $(document).ready(function() {
     var graphDataHash = {
         'class': {},
         'entity': {},
-        'links': {}
+        'links': {},
+        'string': {}
     };
     
     var graphDataObj = {
@@ -95,13 +114,13 @@ $(document).ready(function() {
     var svg = d3.select('#container').append('svg')
         .attr('width', width)
         .attr('height', height)
-        .attr("viewBox", "0 0 " + width + " " + height )
-        .attr("preserveAspectRatio", "xMidYMid meet")
-        .call(d3.behavior.zoom().scaleExtent([0.1, 3]).on("zoom", zoom));
+        .attr('viewBox', '0 0 ' + width + ' ' + height )
+        .attr('preserveAspectRatio', 'xMidYMid meet')
+        .call(d3.behavior.zoom().scaleExtent([0.1, 3]).on('zoom', zoom));
         
     var vis = svg.append('svg:g');
     function zoom() {
-        vis.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale +")");
+        vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale +')');
     };
     
     var group;
@@ -112,7 +131,7 @@ $(document).ready(function() {
     var force = d3.layout.force()
         .nodes(graphDataObj.nodes)
         .links(graphDataObj.links)
-        .charge(-4000)
+        .charge(-15000)
         .linkDistance(50)
         .friction(0.3)
         .size([width, height]);
@@ -120,17 +139,42 @@ $(document).ready(function() {
     var color = d3.scale.category10();
     
     function getColor(d) {
-        switch(d) {
+        
+        if(d.dataType === 'entity') {
+            return '#2ca02c';
+        } else if(d.dataType === 'string') {
+            return '#ff7f0e';
+        } else if(d.dataType === 'class') {
+            
+            if(d.name === '<wordnet_person_100007846>' ||
+               d.name === '<wordnet_cell_100006484>' ||
+               d.name === '<wordnet_structure_104341686>' ||
+               d.name === '<wordnet_substance_100020090>') {
+                return '#1f77b4';
+            } else {
+                return '#d62728';
+            }
+            
+        } else {
+            return '#aaaaaa';
+        }
+        
+        /*
+        switch(d.dataType) {
         case 'class':
             return 0;
             break;
         case 'entity':
             return 1;
             break;
-        default:
+        case 'string':
             return 2;
             break;
+        default:
+            return 3;
+            break;
         }
+        */
     }
     
     function start() {
@@ -138,12 +182,7 @@ $(document).ready(function() {
         var data;
         
         link = vis.selectAll('.link');
-        /*
-        console.log(graphDataObj.nodes);
-        console.log(graphDataObj.links);
-        console.log(graphDataHash);
-        */
-                
+        
         group = vis.selectAll('g.gnode');
         data = group.data(graphDataObj.nodes, function(d) {
             return graphDataHash[d.dataType][d.name];
@@ -152,18 +191,24 @@ $(document).ready(function() {
             .append('g')
             .attr('class', 'gnode')
             .on('click', function(d) {
-                _getD3ClassDataByName(d.name, false);
+                _getD3ClassDataByName(d.name, true, false);
             })
             .call(force.drag);
         
         enter.append('circle')
             .attr('class', 'node')
             .attr('r', 10)
-            .style('fill', function(d) { return color(getColor(d.dataType)); });
+            .style('fill', function(d) { return color(getColor(d)); });
         
         enter.append('text')
-            .style('font-size', '16px')
-            .text(function(d) { return d.name; });
+            .style('font-size', '20px')
+            .text(function(d) {
+                if(d.dataType === 'string') {
+                    return d.name + ' (' + d.mapStrength + ')';
+                }
+                
+                return d.name;
+            });
         
         data.exit().remove();
         
@@ -173,7 +218,6 @@ $(document).ready(function() {
         data.enter()
             .append('line')
             .attr('class', 'link')
-            .attr('marker-end', 'url(#end)')
             .style('stroke-width', function(d) { return Math.sqrt(d.value); });
         data.exit().remove();
                 
@@ -191,15 +235,15 @@ $(document).ready(function() {
         force.start();
     }
             
-    function _extendGraph(nodes, linkArgs) {
+    function _extendGraph(nodes, linkArgs, showNodes) {
         
         function _addNode(node) {
-            
             if(graphDataHash[node.dataType].hasOwnProperty(node.name)) {
                 // do nothing - if node already exists then just let it be
             } else {
-
-                graphDataObj.nodes.push(node);
+                if(showNodes === true) {
+                    graphDataObj.nodes.push(node);
+                }
                 graphDataHash[node.dataType][node.name] = graphDataObj.nodes.length - 1;
             }
         }
@@ -234,8 +278,9 @@ $(document).ready(function() {
                         target: graphDataObj.nodes[graphDataHash[targetDataType][targetName]],
                         weight: weight
                     };
-                    
-                    graphDataObj.links.push(link);
+                    if(showNodes === true) {
+                        graphDataObj.links.push(link);
+                    }
                 } else {
                     console.log('else');
                 }
@@ -258,26 +303,231 @@ $(document).ready(function() {
     
     // Data retrieval functions
     
-    function _getD3ClassDataByName(className, isSourceRoot) {
+    function _getD3ClassDataByName(className) {
         
-        _getD3SubclassDataByName(className, isSourceRoot, function(data) {
-            var i;
-            for(i = 0; i < data.length; i++) {
-                _getD3SuperclassDataByName(data[i]);
-                _getD3ClassToEntityMappingByName(data[i], function(data) {
+        if(className !== '<wordnet_person_100007846>') {
+            _getD3SubclassDataByName(className, true, true, function(data) {
+                
+                if(className !== '<yagoGeoEntity>' &&
+                   className !== '<wordnet_capital_108518505>' &&
+                   className !== '<wordnet_country_108544813>') {
                     var i;
                     for(i = 0; i < data.length; i++) {
-                        _getD3EntityToEntityMappingByName(data[i]);
+                        _getD3SuperclassDataByName(data[i], true);
                     }
+                }
+
+            });
+        } else {
+        }
+
+        
+        
+        // _getD3SubclassDataByName(className, true, true);
+        _getD3ClassToEntityMappingByName(className, true);
+        _getD3ClassToStringMappingByName(className, true);
+    }
+    
+    
+    function _getD3SubclassDataByName(className, isSourceRoot, showNodes, callback) {
+        
+        function exec(data) {
+            
+            console.log(data);
+            
+            var nodes = [];
+            var linkArgs = [];
+            
+            var subClassName;
+            var source;
+            var target;
+            var i;
+            
+            function helper() {
+                target = {
+                    name: subClassName,
+                    size: 1,
+                    dataType: 'class'
+                };
+                nodes.push(target);
+                linkArgs.push({
+                    sourceName: className,
+                    sourceDataType: 'class',
+                    targetName: subClassName,
+                    targetDataType: 'class',
+                    weight: 1
                 });
             }
             
+            source = {
+                name: className,
+                x: centerX,
+                y: centerY,
+                size: Math.sqrt(data['subclassNames'].length),
+                dataType: 'class',
+            };
+            if(isSourceRoot) {
+                source.fixed = true;
+                source.isRoot = true;
+            }
+            nodes.push(source);
+            for(i = 0; i < data['subclassNames'].length; i++) {
+                subClassName = data['subclassNames'][i];
+                
+                if(className === 'owl:Thing') {
+                    if(subClassName === '<yagoGeoEntity>') {
+                        helper();
+                    }
+                    // console.log(subClassName);
+                } else if(className === '<wordnet_organism_100004475>') {
+                    if(subClassName === '<wordnet_cell_100006484>') {
+                        helper();
+                    }
+                } else if(className === '<wordnet_person_100007846>') {
+                    
+                } else if(className === '<yagoGeoEntity>') {
+                    if(subClassName === '<wordnet_capital_108518505>' ||
+                       subClassName === '<wordnet_country_108544813>') {
+                        helper();
+                    }
+                } else if(className === '<wordnet_capital_108518505>') {
+                    
+                } else if(className === '<wordnet_country_108544813>') {
+                    
+                } else {
+                    helper();
+                }
+                
+            }
+            
+            _extendGraph(nodes, linkArgs, showNodes);
+            start();
+            
+            if(callback) {
+                callback(data['subclassNames']);
+            }
+            
+        }
+        
+        if(ajaxDataCache.hasOwnProperty(className)) {
+            exec(ajaxDataCache['classes'][className]); // cache hit
+        } else {
+            APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
+                ajaxDataCache['classes'][className] = data;
+                exec(data);
+            });
+        }
+    }
+    
+    
+    
+    function _getD3SuperclassDataByName(className, showNodes, callback) {
+        
+        function exec(data) {
+            
+            var nodes = [];
+            var linkArgs = [];
+            var superClassName;
+            
+            var i;
+            for(i = 0; i < data['superclassNames'].length; i++) {
+                superClassName = data['superclassNames'][i];
+                target = {
+                    name: superClassName,
+                    size: 1,
+                    dataType: 'class'
+                };
+                nodes.push(target);
+                linkArgs.push({
+                    sourceName: superClassName,
+                    sourceDataType: 'class',
+                    targetName: className,
+                    targetDataType: 'class',
+                    weight: 1
+                });
+            }
+            
+            _extendGraph(nodes, linkArgs, showNodes);
+            start();
+            
+            if(callback) {
+                callback(data['superclassNames']);
+            }
+        }
+        
+        if(ajaxDataCache.hasOwnProperty(className)) {
+            exec(ajaxDataCache['classes'][className]); // cache hit
+        } else {
+            APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
+                ajaxDataCache['classes'][className] = data;
+                exec(data);
+            });
+        }
+    }
+    
+    
+    function _getD3ClassToStringMappingByName(data, showNodes) {
+        
+        function exec(data) {
+            
+            if(! data.hasOwnProperty('mappings')) {
+                return; // nothing to map -- do nothing
+            }
+            
+            var nodes = [];
+            var linkArgs = [];
+            
+            var target;
+            var source;
+            
+            var i;
+            for(i = 0; i < data['mappings'].length; i++) {
+                source = {
+                    name: data['name'],
+                    size: 1,
+                    dataType: 'class'
+                };
+                nodes.push(source);
+                
+                target = {
+                    name: data['mappings'][i]['name'],
+                    size: 1,
+                    dataType: 'string',
+                    mapStrength: data['mappings'][i]['mapStrength']
+                };
+                
+                nodes.push(target);
+                
+                linkArgs.push({
+                    sourceName: data['name'],
+                    sourceDataType: 'class',
+                    targetName: data['mappings'][i]['name'],
+                    targetDataType: 'string',
+                    weight: 1
+                });
+            }
+            
+            _extendGraph(nodes, linkArgs, showNodes);
+            start();
+            
+        }
+        
+        /*
+        if(ajaxDataCache['strings'].hasOwnProperty(data['name'])) {
+            exec(ajaxDataCache['classes'][data['name']]);
+            return;
+        }
+        */
+        APP.api.getClassToStringMappingByClassName(data, function(data) { // cache miss - async call
+            console.log(data);
+            // ajaxDataCache['strings'] = data;
+            exec(data);
         });
         
     }
     
     
-    function _getD3EntityToEntityMappingByName(data) {
+    function _getD3EntityToEntityMappingByName(data, showNodes) {
         
         function exec(data) {
             
@@ -317,7 +567,7 @@ $(document).ready(function() {
                 });
             }
             
-            _extendGraph(nodes, linkArgs);
+            _extendGraph(nodes, linkArgs, showNodes);
             start();
             
         }
@@ -335,7 +585,7 @@ $(document).ready(function() {
     }
     
     
-    function _getD3ClassToEntityMappingByName(className, callback) {
+    function _getD3ClassToEntityMappingByName(className, showNodes, callback) {
                 
         function exec(data) {
             
@@ -375,13 +625,12 @@ $(document).ready(function() {
                 });
             }
             
-            _extendGraph(nodes, linkArgs);
+            _extendGraph(nodes, linkArgs, showNodes);
             start();
             
             if(callback) {
                 callback(data['mappings']);
             }
-            
             
         }
         
@@ -398,118 +647,12 @@ $(document).ready(function() {
         });
     }
     
-    
-    
-    function _getD3SubclassDataByName(className, isSourceRoot, callback) {
-        
-        function exec(data) {
-            var nodes = [];
-            var linkArgs = [];
-            
-            var subClassName;
-            var source;
-            var target;
-            var i;
-            
-            source = {
-                name: className,
-                x: centerX,
-                y: centerY,
-                size: Math.sqrt(data['subclassNames'].length),
-                dataType: 'class',
-            };
-            if(isSourceRoot) {
-                source.fixed = true;
-                source.isRoot = true;
-            }
-            nodes.push(source);
-            for(i = 0; i < data['subclassNames'].length; i++) {
-                subClassName = data['subclassNames'][i];
-                target = {
-                    name: subClassName,
-                    size: 1,
-                    dataType: 'class'
-                };
-                nodes.push(target);
-                linkArgs.push({
-                    sourceName: className,
-                    sourceDataType: 'class',
-                    targetName: subClassName,
-                    targetDataType: 'class',
-                    weight: 1
-                });
-            }
-            
-            _extendGraph(nodes, linkArgs);
-            start();
-            
-            if(callback) {
-                callback(data['subclassNames']);
-            }
-            
-        }
-        
-        if(ajaxDataCache.hasOwnProperty(className)) {
-            exec(ajaxDataCache['classes'][className]); // cache hit
-        } else {
-            APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
-                ajaxDataCache['classes'][className] = data;
-                exec(data);
-            });
-        }
-    }
-    
-    
-    
-    function _getD3SuperclassDataByName(className, callback) {
-        
-        function exec(data) {
-            
-            var nodes = [];
-            var linkArgs = [];
-            var superClassName;
-            
-            var i;
-            for(i = 0; i < data['superclassNames'].length; i++) {
-                superClassName = data['superclassNames'][i];
-                target = {
-                    name: superClassName,
-                    size: 1,
-                    dataType: 'class'
-                };
-                nodes.push(target);
-                linkArgs.push({
-                    sourceName: superClassName,
-                    sourceDataType: 'class',
-                    targetName: className,
-                    targetDataType: 'class',
-                    weight: 1
-                });
-            }
-            
-            _extendGraph(nodes, linkArgs);
-            start();
-            
-            if(callback) {
-                callback(data['superclassNames']);
-            }
-        }
-        
-        if(ajaxDataCache.hasOwnProperty(className)) {
-            exec(ajaxDataCache['classes'][className]); // cache hit
-        } else {
-            APP.api.getClassDataByClassName(className, function(data) { // cache miss - async call
-                ajaxDataCache['classes'][className] = data;
-                exec(data);
-            });
-        }
-    }
-    
-    
             
     // main method start - grab the root class
-    // _getD3ClassDataByName("owl:Thing", true);
-    _getD3ClassDataByName('<wordnet_capital_108518505>');
+    // _getD3ClassDataByName('<wordnet_capital_108518505>', true);
+    // _getD3ClassDataByName('<wordnet_country_108544813>');
+    _getD3ClassDataByName('owl:Thing');
+    
     // _getD3ClassToEntityMappingByName("<wikicategory_Federal_countries>");
     
 });

@@ -11,7 +11,7 @@ import writer.MongoWriter;
  */
 public class ClassToStringMap {
 	
-	public static final int DEFAULT_MAX_SESSIONS_PER_MAPPING = 20;
+	public static final int DEFAULT_MAX_SESSIONS_PER_MAPPING = 30;
 	private int maxSessionsPerMapping;
 	
 	// hash of className to entityName to arraylist of {SessionId, mapping strength}

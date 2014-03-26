@@ -50,6 +50,10 @@ def map():
 def explore():
 	return render_template('explore.html')
 
+@app.route('/explorenew', methods=['GET'])
+def exploreNew():
+	return render_template('explorenew.html')
+
 @app.route('/string', methods=['GET'])
 def string():
 	return render_template('string.html')

@@ -186,7 +186,7 @@ var APP = APP || {};
             var force = d3.layout.force()
                 .nodes(dataObj.nodes)
                 .links(dataObj.links)
-                .charge(-4000)
+                .charge(-10000)
                 .linkDistance(50)
                 .friction(0.3)
                 .size([width, height])
@@ -210,7 +210,7 @@ var APP = APP || {};
                 .style('fill', function(d) { return color(d.group); });
             
             var label = group.append('text')
-                .style('font-size', '10px')
+                .style('font-size', '16px')
                 .text(function(d) { return d.name; });
             
             force.on('tick', function() {
